@@ -63,7 +63,7 @@ This app uses Firebase to power its AI summarization features with Google's Gemi
 
    - In your project settings, click the iOS icon to add your first app.
    - For the **Bundle ID**, use `com.catboss.QuickSummary`.
-   - Download the `GoogleService-Info.plist` file.
+   - After registering, download the `GoogleService-Info.plist` file.
    - Drag and drop this file into the `QuickSummary/` folder in your Xcode project.
 
 3. **Register the Share Extension**:
@@ -71,7 +71,7 @@ This app uses Firebase to power its AI summarization features with Google's Gemi
    - Go back to your project settings and click "Add app".
    - Select the iOS icon again.
    - For the **Bundle ID**, use `com.catboss.QuickSummary.QuickSummaryShareExtension`.
-   - Download the new `GoogleService-Info.plist` file.
+   - After registering, download the new `GoogleService-Info.plist` file.
    - Drag and drop this file into the `QuickSummaryShareExtension/` folder in Xcode.
 
    > **Note on Bundle IDs**: The bundle IDs listed above are the project defaults. You can change them to whatever you like. Just ensure that the ID you enter in the Firebase console is an exact match for the bundle ID in your Xcode project's target settings.
@@ -96,6 +96,16 @@ This app uses Firebase to power its AI summarization features with Google's Gemi
 
 - **On a Real Device (Release Mode)**:
   - You can bypass the debug token requirement by running the app directly on a physical iOS device.
+
+## App architecture
+
+This project follows a modular architecture that separates the main application, the share extension, and shared components into three distinct targets:
+
+- **QuickSummary**: The main application target, containing the user interface and primary app logic.
+- **QuickSummaryShareExtension**: The share extension target, enabling users to summarize content from any app.
+- **QuickSummaryShared**: A shared framework containing all the business logic, including services, models, and utilities, used by both the main app and the share extension.
+
+This modular design improves code reusability and maintainability by centralizing shared functionality in a single framework.
 
 ## Contributing
 
