@@ -13,7 +13,9 @@
   </p>
   <p>
     <a href="#features">Features</a> •
-    <a href="#installation">Installation</a> •
+    <a href="#roadmap">Roadmap</a> •
+    <a href="#build-a-project">Build a project</a> •
+    <a href="#app-architecture">App Architecture</a> •
     <a href="#contributing">Contributing</a> •
     <a href="#license">License</a> 
   </p>
@@ -43,7 +45,7 @@ Here are the exciting features planned for the future of QuickSummary:
 - **Cross-Platform Support**:
   - [ ] **Android**: Develop and release a native Android version of the app.
 
-## Quick Start
+## Build a project
 
 This app uses Firebase to power its AI summarization features with Google's Gemini model. Follow these steps carefully to get the project running.
 
