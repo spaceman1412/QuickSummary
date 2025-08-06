@@ -18,6 +18,9 @@ struct SettingsView: View {
         // Usage statistics section
         usageStatsSection
 
+        // Support & Feedback section
+        supportSection
+
         // About section
         aboutSection
 
@@ -159,6 +162,8 @@ struct SettingsView: View {
     }
   }
 
+  // MARK: - About Section
+
   private var aboutSection: some View {
     Section("About") {
       HStack {
@@ -205,6 +210,28 @@ struct SettingsView: View {
     }
   }
 
+  // MARK: - Support & Feedback Section
+
+  private var supportSection: some View {
+    Section("Support & Feedback") {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("This project is open-source and community-driven. Your feedback is welcome!")
+          .font(.caption)
+          .foregroundColor(.secondary)
+
+        Link(destination: URL(string: "https://github.com/spaceman1412/QuickSummary")!) {
+          HStack {
+            Label("Report an Issue on GitHub", systemImage: "ladybug.fill")
+            Spacer()
+            Image(systemName: "arrow.up.right.square")
+              .foregroundColor(.secondary)
+          }
+        }
+        .foregroundColor(.primary)
+      }
+      .padding(.vertical, 4)
+    }
+  }
 }
 
 #Preview {
