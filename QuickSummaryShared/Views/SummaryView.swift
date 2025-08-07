@@ -91,45 +91,46 @@ public struct SummaryView: View {
 	}
 
 	private var compactHeader: some View {
-		HStack(spacing: 8) {
-			Button(action: onCancel) {
-				Text("Cancel")
-					.padding(8)
+		ZStack {
+			HStack {
+				Button(action: onCancel) {
+					Image(systemName: "xmark")
+						.padding(8)
+				}
+				Spacer()
+				HStack {
+					Button(action: {
+						Task {
+							do {
+								try await viewModel.retrySummary()
+							} catch {
+								isShowError = true
+							}
+						}
+					}) {
+						Image(systemName: "arrow.clockwise")
+					}
+
+					Button(action: {
+						viewModel.isShowingSettings = true
+					}) {
+						Image(systemName: "gear")
+					}
+
+					Button(action: handleSave) {
+						Image(systemName: "square.and.arrow.down")
+							.padding(.bottom, 3)
+					}
+					.disabled(viewModel.summaryResult == nil)
+				}
 			}
-			Spacer(minLength: 0)
+
 			Picker("Mode", selection: $selectedMode) {
 				Image(systemName: "doc.text").tag(Mode.summary)
 				Image(systemName: "bubble.left.and.bubble.right").tag(Mode.chat)
 			}
 			.pickerStyle(.segmented)
 			.frame(maxWidth: 120)
-			Spacer(minLength: 0)
-
-			HStack {
-				Button(action: {
-					Task {
-						do {
-							try await viewModel.retrySummary()
-						} catch {
-							isShowError = true
-						}
-					}
-				}) {
-					Image(systemName: "arrow.clockwise")
-				}
-
-				Button(action: {
-					viewModel.isShowingSettings = true
-				}) {
-					Image(systemName: "gear")
-				}
-			}
-
-			Button(action: handleSave) {
-				Text("Save")
-					.padding(8)
-			}
-			.disabled((viewModel.summaryResult != nil) ? false : true)
 		}
 		.padding(.vertical, 4)
 		.padding(.horizontal, 4)
