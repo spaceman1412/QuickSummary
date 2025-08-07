@@ -104,6 +104,27 @@ public struct SummaryView: View {
 			.pickerStyle(.segmented)
 			.frame(maxWidth: 120)
 			Spacer(minLength: 0)
+
+			HStack {
+				Button(action: {
+					Task {
+						do {
+							try await viewModel.retrySummary()
+						} catch {
+							isShowError = true
+						}
+					}
+				}) {
+					Image(systemName: "arrow.clockwise")
+				}
+
+				Button(action: {
+					viewModel.isShowingSettings = true
+				}) {
+					Image(systemName: "gear")
+				}
+			}
+
 			Button(action: handleSave) {
 				Text("Save")
 					.padding(8)
@@ -137,6 +158,9 @@ public struct SummaryView: View {
 				Color.clear.frame(height: 50)
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
+		}
+		.sheet(isPresented: $viewModel.isShowingSettings) {
+			SummarySettingsView()
 		}
 		.padding(.vertical, 8)
 		.scrollIndicators(.hidden)
