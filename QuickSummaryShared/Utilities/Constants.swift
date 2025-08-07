@@ -177,6 +177,22 @@ public enum AIModel: String, CaseIterable, Identifiable {
 		case .gemini20FlashLite: return "Gemini 2.0 Flash‑Lite"
 		}
 	}
+
+	/// Short model description
+	public var description: String {
+		switch self {
+		case .gemini25Pro:
+			return "Most powerful model, ideal for complex summaries."
+		case .gemini25Flash:
+			return "Fast and capable, great for a balance of speed and quality."
+		case .gemini25FlashLite:
+			return "Lightweight and efficient, perfect for quick summaries."
+		case .gemini20Flash:
+			return "A previous generation fast and capable model."
+		case .gemini20FlashLite:
+			return "A previous generation lightweight and efficient model."
+		}
+	}
 }
 
 public enum SummaryStyle: String, CaseIterable, Identifiable {
@@ -261,7 +277,7 @@ public enum SummaryLength: String, CaseIterable, Identifiable {
 			return "Comprehensive summary with extensive details and context."
 		}
 	}
-	
+
 	public var lengthModifier: String {
 		switch self {
 		case .short:
@@ -278,8 +294,8 @@ public enum SummaryLength: String, CaseIterable, Identifiable {
 }
 
 public func hideKeyboard() {
-#if canImport(UIKit)
-	UIApplication.shared.sendAction(
-		#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-#endif
+	#if canImport(UIKit)
+		UIApplication.shared.sendAction(
+			#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+	#endif
 }

@@ -40,7 +40,7 @@ struct SettingsView: View {
         }
       }
       .pickerStyle(MenuPickerStyle())
-      Text("Choose the AI model for generating summaries.")
+      Text(viewModel.settingsService.selectedAIModel.description)
         .font(.caption)
         .foregroundColor(.secondary)
     }
