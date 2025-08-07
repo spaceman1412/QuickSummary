@@ -16,6 +16,7 @@ public class SummaryViewModel: ObservableObject {
 	@Published public var messageText: String = ""
 	@Published public var isLoadingChat: Bool = false
 	@Published public var suggestedPrompts: [String] = []
+	@Published public var isShowingSettings: Bool = false
 
 	let initialText: String
 	let initialTitle: String?
@@ -29,6 +30,13 @@ public class SummaryViewModel: ObservableObject {
 		self.initialText = initialText
 		self.initialTitle = initialTitle
 		self.inputType = inputType
+	}
+
+	public func retrySummary() async throws {
+		self.summaryResult = nil
+		self.streamingSummaryText = ""
+		self.chatMessages = []
+		try await processSummary()
 	}
 
 	public func processSummary() async throws {
