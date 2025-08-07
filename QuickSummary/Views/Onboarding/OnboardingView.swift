@@ -307,32 +307,49 @@ private class PlayerUIView: UIView {
     private var playerLooper: AVPlayerLooper?
     private var player: AVQueuePlayer?
     private let playerLayer = AVPlayerLayer()
+    private let activityIndicator = UIActivityIndicatorView(style: .large)
 
     init(videoName: String) {
         super.init(frame: .zero)
 
+        // Setup placeholder
+        backgroundColor = UIColor.secondarySystemGroupedBackground
+        activityIndicator.color = .gray
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+        activityIndicator.startAnimating()
+
         // Defer the expensive player setup to a background thread.
         DispatchQueue.global(qos: .background).async {
             guard let fileUrl = Bundle.main.url(forResource: videoName, withExtension: "mp4") else {
-                print("Error: Video file '\(videoName).mp4' not found in bundle.")
-                // You could optionally display a placeholder here on the main thread
+                DispatchQueue.main.async {
+                    print("Error: Video file '\(videoName).mp4' not found in bundle.")
+                    self.activityIndicator.stopAnimating()
+                    // Optionally show an error icon
+                }
                 return
             }
 
             let asset = AVAsset(url: fileUrl)
             let item = AVPlayerItem(asset: asset)
             let player = AVQueuePlayer(playerItem: item)
+            let playerLooper = AVPlayerLooper(player: player, templateItem: item)
 
             // switch back to the main thread to update the UI.
             DispatchQueue.main.async {
                 self.player = player
+                self.playerLooper = playerLooper
                 self.playerLayer.player = player
                 self.playerLayer.videoGravity = .resizeAspectFill
-                self.layer.addSublayer(self.playerLayer)
+                self.layer.insertSublayer(self.playerLayer, at: 0)
 
-                self.playerLooper = AVPlayerLooper(player: player, templateItem: item)
+                self.activityIndicator.stopAnimating()
+                self.backgroundColor = .clear
                 player.isMuted = true
-                player.play()
                 self.setNeedsLayout()  // Ensure layoutSubviews is called
             }
         }
