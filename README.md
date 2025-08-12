@@ -78,26 +78,17 @@ This app uses Firebase to power its AI summarization features with Google's Gemi
 
    > **Note on Bundle IDs**: The bundle IDs listed above are the project defaults. You can change them to whatever you like. Just ensure that the ID you enter in the Firebase console is an exact match for the bundle ID in your Xcode project's target settings.
 
-4. **Enable Required Services**:
-   - In the Firebase console, navigate to the **Build** section on the left-hand menu.
-   - **Enable Gemini API**: Click on **"Build with Gemini"** and enable the Gemini API.
-   - **Enable App Check**: In the **App Check** section, you must configure the providers for each app:
-     - For the main app (`com.catboss.QuickSummary`), select it and enable **App Attest**.
-     - For the share extension (`com.catboss.QuickSummary.QuickSummaryShareExtension`), select it and enable **Device Check**.
+4. **Enable Required Service**:
+   - In the Firebase console, open the **AI** section.
+   - **Enable Gemini Developer API**: Go to **AI > Gemini** and enable the Gemini API (Developer) for your project.
 
 ### 3. Running the App
 
-- **On the Simulator (Debug Mode)**:
+- **On the Simulator or a Real Device**:
 
-  1. Run the app from Xcode. It will likely fail at first, which is expected.
-  2. Open the debug console in Xcode and look for a log message that starts with `[AppCheck]`. It will contain a debug token.
-  3. Copy this token.
-  4. In the Firebase Console, go to **App Check > Apps**, select your main app, and click on **"Manage debug tokens"**. Add the new token.
-  5. Repeat the process for your share extension app.
-  6. Rerun the app. It should now work correctly.
-
-- **On a Real Device (Release Mode)**:
-  - You can bypass the debug token requirement by running the app directly on a physical iOS device.
+  1. Open the project in Xcode and select the `QuickSummary` scheme.
+  2. Build and run the app. If you encounter configuration errors, verify that both `GoogleService-Info.plist` files are added to the correct targets (`QuickSummary` and `QuickSummaryShareExtension`).
+  3. If you see App Check warnings in the console, you can ignore them. App Check is not required; only the Gemini Developer API is needed for AI features.
 
 ## App architecture
 
