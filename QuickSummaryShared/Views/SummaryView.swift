@@ -95,7 +95,7 @@ public struct SummaryView: View {
 			HStack {
 				Button(action: onCancel) {
 					Image(systemName: "xmark")
-						.padding(8)
+						.font(.title3)
 				}
 				Spacer()
 				HStack {
@@ -109,16 +109,19 @@ public struct SummaryView: View {
 						}
 					}) {
 						Image(systemName: "arrow.clockwise")
+							.font(.title3)
 					}
 
 					Button(action: {
 						viewModel.isShowingSettings = true
 					}) {
 						Image(systemName: "gear")
+							.font(.title3)
 					}
 
 					Button(action: handleSave) {
 						Image(systemName: "square.and.arrow.down")
+							.font(.title3)
 							.padding(.bottom, 3)
 					}
 					.disabled(viewModel.summaryResult == nil)
