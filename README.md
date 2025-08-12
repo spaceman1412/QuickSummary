@@ -79,8 +79,8 @@ This app uses Firebase to power its AI summarization features with Google's Gemi
    > **Note on Bundle IDs**: The bundle IDs listed above are the project defaults. You can change them to whatever you like. Just ensure that the ID you enter in the Firebase console is an exact match for the bundle ID in your Xcode project's target settings.
 
 4. **Enable Required Service**:
-   - In the Firebase console, open the **AI** section.
-   - **Enable Gemini Developer API**: Go to **AI > Gemini** and enable the Gemini API (Developer) for your project.
+   - In the Firebase console, open the **AI Logic** section (Firebase AI Logic).
+   - **Enable Gemini Developer API**: Go to **AI Logic > Gemini** and enable the Gemini API (Developer) for your project.
 
 ### 3. Running the App
 
