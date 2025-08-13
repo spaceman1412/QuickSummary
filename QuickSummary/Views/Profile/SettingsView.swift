@@ -34,15 +34,31 @@ struct SettingsView: View {
 
   private var aiModelSection: some View {
     Section("AI Model") {
-      Picker("AI Model", selection: $viewModel.settingsService.selectedAIModel) {
-        ForEach(AIModel.allCases, id: \.self) { model in
-          Text(model.title).tag(model)
+      // Selection mode
+      Picker("Mode", selection: $viewModel.settingsService.modelSelectionMode) {
+        ForEach(ModelSelectionMode.allCases, id: \.self) { mode in
+          Text(mode.title).tag(mode)
         }
       }
-      .pickerStyle(MenuPickerStyle())
-      Text(viewModel.settingsService.selectedAIModel.description)
+      .pickerStyle(SegmentedPickerStyle())
+
+      if viewModel.settingsService.modelSelectionMode == .manual {
+        Picker("AI Model", selection: $viewModel.settingsService.selectedAIModel) {
+          ForEach(AIModel.allCases, id: \.self) { model in
+            Text(model.title).tag(model)
+          }
+        }
+        .pickerStyle(MenuPickerStyle())
+        Text(viewModel.settingsService.selectedAIModel.description)
+          .font(.caption)
+          .foregroundColor(.secondary)
+      } else {
+        Text(
+          "Smart Default chooses among fast, cost‑efficient models based on your content and summary length."
+        )
         .font(.caption)
         .foregroundColor(.secondary)
+      }
     }
   }
 

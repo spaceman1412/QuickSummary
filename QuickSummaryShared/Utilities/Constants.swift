@@ -293,6 +293,29 @@ public enum SummaryLength: String, CaseIterable, Identifiable {
 	}
 }
 
+// MARK: - Model Selection Mode
+public enum ModelSelectionMode: String, CaseIterable, Identifiable {
+	case smart
+	case manual
+
+	public var id: String { rawValue }
+	public var title: String {
+		switch self {
+		case .smart: return "Smart Default"
+		case .manual: return "Manual"
+		}
+	}
+	public var description: String {
+		switch self {
+		case .smart:
+			return
+				"Automatically chooses among fast, cost‑efficient models based on your content and summary length."
+		case .manual:
+			return "Select a specific model to use for all requests."
+		}
+	}
+}
+
 public func hideKeyboard() {
 	#if canImport(UIKit)
 		UIApplication.shared.sendAction(

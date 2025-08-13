@@ -12,9 +12,42 @@ public class AIService: ObservableObject {
 		self.ai = FirebaseAI.firebaseAI(backend: .googleAI())
 	}
 
-	// Computed property to get the current model based on settings
-	private var model: GenerativeModel {
-		ai.generativeModel(modelName: SettingsService.shared.selectedAIModel.key)
+	// Resolve model based on Smart/Manual mode and lightweight heuristics
+	private struct ModelContextInfo {
+		let isYouTube: Bool
+		let summaryLength: SummaryLength
+		let contentCharCount: Int
+	}
+
+	private func resolvedModelKey(for ctx: ModelContextInfo) -> String {
+		let settings = SettingsService.shared
+		if settings.modelSelectionMode == .manual {
+			return settings.selectedAIModel.key
+		}
+
+		// Smart Default: only consider 2.0 Flash‑Lite, 2.0 Flash, 2.5 Flash‑Lite
+		// Heuristics prioritize RPM/cost
+		if ctx.isYouTube {
+			// Long/detailed YouTube -> 2.5 Flash‑Lite; otherwise 2.0 Flash
+			if ctx.summaryLength == .detailed || ctx.contentCharCount > 6000 {
+				return AIModel.gemini25FlashLite.key
+			}
+			return AIModel.gemini20Flash.key
+		}
+
+		// Text inputs
+		if ctx.contentCharCount < 1200 || ctx.summaryLength == .short {
+			return AIModel.gemini20FlashLite.key
+		}
+		if ctx.summaryLength == .detailed || ctx.contentCharCount > 6000 {
+			return AIModel.gemini25FlashLite.key
+		}
+		return AIModel.gemini20Flash.key
+	}
+
+	private func model(for ctx: ModelContextInfo) -> GenerativeModel {
+		let key = resolvedModelKey(for: ctx)
+		return ai.generativeModel(modelName: key)
 	}
 
 	/// Summarizes the given text using the specified style and length, returning a stream of text chunks.
@@ -37,7 +70,12 @@ public class AIService: ObservableObject {
 					let prompt = buildPrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
-					let contentStream = try model.generateContentStream(prompt)
+					let ctx = ModelContextInfo(
+						isYouTube: false,
+						summaryLength: summaryLength,
+						contentCharCount: text.count
+					)
+					let contentStream = try model(for: ctx).generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -70,7 +108,12 @@ public class AIService: ObservableObject {
 
 						Please provide a helpful and accurate response based on the content above in \(languageName).
 						"""
-					let contentStream = try model.generateContentStream(prompt)
+					let ctx = ModelContextInfo(
+						isYouTube: false,
+						summaryLength: .medium,
+						contentCharCount: context.count
+					)
+					let contentStream = try model(for: ctx).generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -106,7 +149,12 @@ public class AIService: ObservableObject {
 
 				Text: "\(content)"
 				"""
-			let response = try await model.generateContent(prompt)
+			let ctx = ModelContextInfo(
+				isYouTube: false,
+				summaryLength: .medium,
+				contentCharCount: content.count
+			)
+			let response = try await model(for: ctx).generateContent(prompt)
 
 			guard let text = response.text else {
 				return defaultPrompts
@@ -139,8 +187,13 @@ public class AIService: ObservableObject {
 					let prompt = buildYouTubePrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
+					let ctx = ModelContextInfo(
+						isYouTube: true,
+						summaryLength: summaryLength,
+						contentCharCount: text.count
+					)
 					let contentStream: AsyncThrowingStream<GenerateContentResponse, any Error> =
-						try model.generateContentStream(prompt)
+						try model(for: ctx).generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -163,7 +216,12 @@ public class AIService: ObservableObject {
 				do {
 					let prompt = buildYouTubeChatPrompt(
 						message: message, transcript: transcript, language: language)
-					let contentStream = try model.generateContentStream(prompt)
+					let ctx = ModelContextInfo(
+						isYouTube: true,
+						summaryLength: .medium,
+						contentCharCount: transcript.count
+					)
+					let contentStream = try model(for: ctx).generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse

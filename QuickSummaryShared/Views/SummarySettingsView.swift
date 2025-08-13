@@ -35,14 +35,24 @@ struct SummarySettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("AI Model")) {
-                    Picker("Select Model", selection: $settingsService.selectedAIModel) {
-                        ForEach(AIModel.allCases) { model in
-                            Text(model.title).tag(model)
+                Section(header: Text("Model Selection")) {
+                    Picker("Mode", selection: $settingsService.modelSelectionMode) {
+                        ForEach(ModelSelectionMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
                         }
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                }
+                if settingsService.modelSelectionMode == .manual {
+                    Section(header: Text("AI Model")) {
+                        Picker("Select Model", selection: $settingsService.selectedAIModel) {
+                            ForEach(AIModel.allCases) { model in
+                                Text(model.title).tag(model)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                    }
                 }
 
                 Section(header: Text("Summary Style")) {
