@@ -55,6 +55,15 @@ struct SummarySettingsView: View {
                     .labelsHidden()
                 }
 
+                Section(header: Text("Summary Length")) {
+                    Picker("Select Length", selection: $settingsService.selectedSummaryLength) {
+                        ForEach(SummaryLength.allCases) { length in
+                            Text(length.title).tag(length)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
                 Section(header: Text("Language")) {
                     Button(action: {
                         languageSheetPresented = true

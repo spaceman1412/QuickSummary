@@ -190,13 +190,12 @@ public class AIService: ObservableObject {
 		let languageName =
 			Locale.current.localizedString(forLanguageCode: language)
 			?? "English"
-		let languageInstruction = "Summarize in \(languageName)."
+
 		return """
-			\(languageInstruction)
-
-			\(stylePrompt)
-
-			\(lengthModifier)
+			Instructions:
+			1) Write the summary in \(languageName).
+			2) Follow this style: \(stylePrompt)
+			3) Enforce this length guidance: \(lengthModifier)
 
 			Content to summarize:
 			\(text)
@@ -219,16 +218,14 @@ public class AIService: ObservableObject {
 			?? "English"
 
 		return """
-			Summarize this YouTube video in \(languageName).
-			\(stylePrompt)
-
-			\(lengthModifier)
+			Instructions:
+			1) Write the summary in \(languageName).
+			2) Follow this style: \(stylePrompt)
+			3) Enforce this length guidance: \(lengthModifier)
+			4) Include timestamps like [HH:MM:SS] for each point.
 
 			Transcript:
 			\(text)
-
-			Please provide a concise summary with key points and include timestamps (e.g., [00:01:23]) for each main idea or section.
-			Format the summary as a list of points with timestamps.
 
 			Summary with timestamps:
 			"""

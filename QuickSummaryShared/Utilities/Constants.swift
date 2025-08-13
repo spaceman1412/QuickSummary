@@ -282,13 +282,13 @@ public enum SummaryLength: String, CaseIterable, Identifiable {
 		switch self {
 		case .short:
 			return
-				"Keep it concise and focus on only the most essential points. Aim for 2-3 sentences or bullet points."
+				"Produce 2–4 bullet points and no more than ~100 words. Focus only on essential points. Do not include background, examples, quotes, sub‑points, or tangential details."
 		case .medium:
 			return
-				"Provide a balanced level of detail covering the main ideas and important supporting information. Aim for 1-2 paragraphs."
+				"Produce 5–8 bullet points or 2–3 short paragraphs (about 150–250 words). Cover main ideas and key details. Do not attempt exhaustive coverage or deep background."
 		case .detailed:
 			return
-				"Include comprehensive details, context, and supporting information. Provide thorough coverage of all important aspects."
+				"Produce 10–16 bullet points or 4–6 paragraphs (at least ~350–600 words). Include context, caveats, brief examples, and important nuances for comprehensive coverage."
 		}
 	}
 }
