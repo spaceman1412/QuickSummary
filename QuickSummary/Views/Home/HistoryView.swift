@@ -120,20 +120,12 @@ struct SummaryRowView: View {
         .font(.body)
         .lineLimit(2)
       HStack {
-        Label(
-          "\(TimeSavingCalculator.formatTime(minutes: summary.minutesSaved)) saved",
-          systemImage: "clock.fill"
-        )
-        .font(.caption)
-        .foregroundColor(.green)
-        Spacer()
-        if !summary.chatMessages.isEmpty {
-          Label("\(summary.chatMessages.count)", systemImage: "bubble.left.and.bubble.right")
-            .font(.caption)
-            .foregroundColor(.blue)
-        }
+		  Image(systemName: "clock.fill")
+		  Text("\(TimeSavingCalculator.formatTime(minutes: summary.minutesSaved)) saved")
       }
-    }
+	  .font(.caption)
+	  .foregroundColor(.green)
+	}
     .padding(.vertical, 4)
   }
 }
