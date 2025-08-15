@@ -11,7 +11,12 @@
     A free & open source AI summary app focus on speed and utility.<br>
     <sub style="color:gray;">Powered by Gemini</sub>
   </p>
-  <p>
+<div align="center">
+
+[![Download on the App Store](docs/download_on_the_app_store.svg)](https://apps.apple.com/us/app/quicksummary-ai-summary/id6748961856)
+
+</div>
+   <p>
     <a href="#features">Features</a> •
     <a href="#roadmap">Roadmap</a> •
     <a href="#build-a-project">Build a project</a> •
