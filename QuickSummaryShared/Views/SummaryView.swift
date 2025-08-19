@@ -76,6 +76,9 @@ public struct SummaryView: View {
 		.onTapGesture {
 			hideKeyboard()
 		}
+		.sheet(isPresented: $viewModel.isShowingSettings) {
+			SummarySettingsView()
+		}
 		.task {
 			do {
 				try await viewModel.processSummary()
@@ -150,6 +153,7 @@ public struct SummaryView: View {
 						.textSelection(.enabled)
 				}
 				HStack(alignment: .bottom, spacing: 0) {
+					//TODO: This should rehandle
 					Markdown(viewModel.streamingSummaryText)
 						.font(.body)
 						.textSelection(.enabled)
@@ -162,9 +166,6 @@ public struct SummaryView: View {
 				Color.clear.frame(height: 50)
 			}
 			.frame(maxWidth: .infinity, alignment: .leading)
-		}
-		.sheet(isPresented: $viewModel.isShowingSettings) {
-			SummarySettingsView()
 		}
 		.padding(.vertical, 8)
 		.scrollIndicators(.hidden)

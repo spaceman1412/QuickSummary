@@ -54,6 +54,7 @@ struct ShareExtensionRootView: View {
 	@State private var error: Error?
 	@State private var extractedText: String?
 	@State private var fetchedTitle: String?
+	@State private var summaryViewModel: SummaryViewModel?
 	let onDone: () -> Void
 	private let setting = SettingsService.shared
 	let initialText: String
@@ -86,12 +87,7 @@ struct ShareExtensionRootView: View {
 					}
 				}
 				.navigationDestination(isPresented: $showSummaryScreen) {
-					if let text = extractedText {
-						let viewModel = SummaryViewModel(
-							initialText: text,
-							initialTitle: effectiveTitle,
-							inputType: detectedContentType)
-
+					if let viewModel = summaryViewModel {
 						SummaryView(
 							viewModel: viewModel,
 							onSave: onSave, onCancel: onCancel, modelContext: modelContext
@@ -128,7 +124,15 @@ struct ShareExtensionRootView: View {
 
 					//TODO: Find better way to delay
 					try? await Task.sleep(nanoseconds: 500_000_000)
-					showSummaryScreen = true
+					if let text = extractedText {
+						if summaryViewModel == nil {
+							summaryViewModel = SummaryViewModel(
+								initialText: text,
+								initialTitle: effectiveTitle,
+								inputType: detectedContentType)
+						}
+						showSummaryScreen = true
+					}
 				} catch let error {
 					self.error = error
 					isShowError = true
@@ -149,14 +153,14 @@ struct ShareExtensionRootView: View {
 					.foregroundColor(.secondary)
 				Spacer()
 			}
-			
+
 			HStack(spacing: 6) {
 				Label(setting.selectedSummaryStyle.title, systemImage: "doc.text.fill")
 					.font(.caption)
 					.foregroundColor(.secondary)
 				Spacer()
 			}
-			
+
 			VStack(alignment: .leading, spacing: 12) {
 				Picker("Summary Length", selection: .constant(setting.selectedSummaryLength)) {
 					ForEach(SummaryLength.allCases, id: \.self) { preset in
@@ -166,7 +170,6 @@ struct ShareExtensionRootView: View {
 				.pickerStyle(SegmentedPickerStyle())
 				.disabled(true)
 			}
-
 
 			if isLoading {
 				loadingSection
