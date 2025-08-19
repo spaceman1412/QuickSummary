@@ -87,6 +87,8 @@ struct ShareExtensionRootView: View {
 					}
 				}
 				.navigationDestination(isPresented: $showSummaryScreen) {
+					let _ = print("MyView body is being re-evaluated.")
+					
 					if let viewModel = summaryViewModel {
 						SummaryView(
 							viewModel: viewModel,
@@ -122,8 +124,6 @@ struct ShareExtensionRootView: View {
 					extractedText = try await SummaryGenerator.processInput(
 						input: initialText)
 
-					//TODO: Find better way to delay
-					try? await Task.sleep(nanoseconds: 500_000_000)
 					if let text = extractedText {
 						if summaryViewModel == nil {
 							summaryViewModel = SummaryViewModel(
