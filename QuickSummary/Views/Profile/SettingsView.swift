@@ -3,10 +3,11 @@ import SwiftUI
 
 struct SettingsView: View {
   @StateObject private var viewModel = SettingsViewModel()
+  @Environment(\.openURL) private var openURL
 
   var body: some View {
     NavigationStack {
-		List {
+      List {
         // AI Backend selection section
         aiBackendSection
 
@@ -18,6 +19,9 @@ struct SettingsView: View {
 
         // Language selection section
         languageSection
+
+        // Support the Developer section
+        supportDeveloperSection
 
         // Usage statistics section
         usageStatsSection
@@ -221,6 +225,42 @@ struct SettingsView: View {
           .font(.caption)
           .foregroundColor(.secondary)
       }
+    }
+  }
+
+  private var supportDeveloperSection: some View {
+    Section("Support the Developer") {
+      VStack(alignment: .leading, spacing: 8) {
+        Text(
+          "QuickSummary is free. If you find it helpful, please consider supporting development."
+        )
+        .font(.caption)
+        .foregroundColor(.secondary)
+      }
+
+      if let reviewURL = AppConstants.Review.appStoreWriteReviewURL {
+        Button {
+          openURL(reviewURL)
+        } label: {
+          HStack {
+            Label("Rate on the App Store", systemImage: "star.fill")
+            Spacer()
+            Image(systemName: "arrow.up.right.square")
+              .foregroundColor(.secondary)
+          }
+        }
+        .foregroundColor(.primary)
+      }
+
+      Link(destination: URL(string: "https://github.com/spaceman1412/QuickSummary")!) {
+        HStack {
+          Label("Star the project on GitHub", systemImage: "star")
+          Spacer()
+          Image(systemName: "arrow.up.right.square")
+            .foregroundColor(.secondary)
+        }
+      }
+      .foregroundColor(.primary)
     }
   }
 
