@@ -73,7 +73,7 @@ public class WebParserService {
 	/// Converts a string to URL if valid
 	public static func url(from string: String) -> URL? {
 		// Add https:// if no scheme is provided
-		var urlString = string
+		let urlString = string
 		if isValidURL(urlString) {
 			return URL(string: urlString)
 		} else {

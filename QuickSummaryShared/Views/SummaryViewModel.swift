@@ -47,7 +47,7 @@ public class SummaryViewModel: ObservableObject {
 		guard
 			!initialText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 		else {
-			return
+			throw WebParserError.parsingFailed
 		}
 
 		isLoadingSummary = true
