@@ -330,6 +330,28 @@ public enum LanguageSelectionMode: String, CaseIterable, Identifiable {
 	}
 }
 
+// MARK: - AI Backend Mode
+public enum AIBackendMode: String, CaseIterable, Identifiable {
+	case managedFirebase
+	case customAPI
+
+	public var id: String { rawValue }
+	public var title: String {
+		switch self {
+		case .managedFirebase: return "Managed"
+		case .customAPI: return "Custom"
+		}
+	}
+	public var description: String {
+		switch self {
+		case .managedFirebase:
+			return "Uses Firebase AI SDK (default)"
+		case .customAPI:
+			return "Uses your own Gemini API key"
+		}
+	}
+}
+
 public func hideKeyboard() {
 	#if canImport(UIKit)
 		UIApplication.shared.sendAction(

@@ -67,16 +67,32 @@ public class AIService: ObservableObject {
 					)
 					let effectiveKey = resolvedModelKey(for: ctx)
 					let mode = SettingsService.shared.modelSelectionMode
+					let backendMode = SettingsService.shared.aiBackendMode
 					print(
-						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+						"[AIService] Backend=\(backendMode.title) Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
 					)
-					let contentStream = try ai.generativeModel(modelName: effectiveKey)
-						.generateContentStream(prompt)
-					for try await chunk in contentStream {
-						guard let text = chunk.text else {
-							throw AIServiceError.emptyResponse
+
+					// Branch based on backend mode
+					if backendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+						// Use direct REST API
+						let contentStream = GeminiAPIClient.shared.generateContentStream(
+							modelKey: effectiveKey,
+							prompt: prompt
+						)
+						
+						for try await chunk in contentStream {
+							continuation.yield(chunk)
 						}
-						continuation.yield(text)
+					} else {
+						// Use Firebase AI SDK (default)
+						let contentStream = try ai.generativeModel(modelName: effectiveKey)
+							.generateContentStream(prompt)
+						for try await chunk in contentStream {
+							guard let text = chunk.text else {
+								throw AIServiceError.emptyResponse
+							}
+							continuation.yield(text)
+						}
 					}
 					continuation.finish()
 				} catch {
@@ -116,14 +132,31 @@ public class AIService: ObservableObject {
 					)
 					let effectiveKey = resolvedModelKey(for: ctx)
 					let mode = SettingsService.shared.modelSelectionMode
-					print("[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) Chat")
-					let contentStream = try ai.generativeModel(modelName: effectiveKey)
-						.generateContentStream(prompt)
-					for try await chunk in contentStream {
-						guard let text = chunk.text else {
-							throw AIServiceError.emptyResponse
+					let backendMode = SettingsService.shared.aiBackendMode
+					print(
+						"[AIService] Backend=\(backendMode.title) Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) Chat"
+					)
+
+					// Branch based on backend mode
+					if backendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+						// Use direct REST API
+						let contentStream = GeminiAPIClient.shared.generateContentStream(
+							modelKey: effectiveKey,
+							prompt: prompt
+						)
+						for try await chunk in contentStream {
+							continuation.yield(chunk)
 						}
-						continuation.yield(text)
+					} else {
+						// Use Firebase AI SDK (default)
+						let contentStream = try ai.generativeModel(modelName: effectiveKey)
+							.generateContentStream(prompt)
+						for try await chunk in contentStream {
+							guard let text = chunk.text else {
+								throw AIServiceError.emptyResponse
+							}
+							continuation.yield(text)
+						}
 					}
 					continuation.finish()
 				} catch {
@@ -178,16 +211,30 @@ public class AIService: ObservableObject {
 			)
 			let effectiveKey = resolvedModelKey(for: ctx)
 			let mode = SettingsService.shared.modelSelectionMode
+			let backendMode = SettingsService.shared.aiBackendMode
 			print(
-				"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SuggestedPrompts")
-			let response = try await ai.generativeModel(modelName: effectiveKey).generateContent(
-				prompt)
+				"[AIService] Backend=\(backendMode.title) Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SuggestedPrompts"
+			)
 
-			guard let text = response.text else {
-				return defaultPrompts
+			let responseText: String
+			if backendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+				// Use direct REST API
+				responseText = try await GeminiAPIClient.shared.generateContent(
+					modelKey: effectiveKey,
+					prompt: prompt
+				)
+			} else {
+				// Use Firebase AI SDK (default)
+				let response = try await ai.generativeModel(modelName: effectiveKey)
+					.generateContent(
+						prompt)
+				guard let text = response.text else {
+					return defaultPrompts
+				}
+				responseText = text
 			}
 
-			let prompts = text.split(whereSeparator: \.isNewline).map { String($0) }
+			let prompts = responseText.split(whereSeparator: \.isNewline).map { String($0) }
 			return prompts.isEmpty ? defaultPrompts : prompts
 		} catch {
 			print("Error generating suggested prompts: \(error.localizedDescription)")
@@ -216,17 +263,32 @@ public class AIService: ObservableObject {
 					)
 					let effectiveKey = resolvedModelKey(for: ctx)
 					let mode = SettingsService.shared.modelSelectionMode
+					let backendMode = SettingsService.shared.aiBackendMode
 					print(
-						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+						"[AIService] Backend=\(backendMode.title) Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
 					)
-					let contentStream: AsyncThrowingStream<GenerateContentResponse, any Error> =
-						try ai.generativeModel(modelName: effectiveKey).generateContentStream(
-							prompt)
-					for try await chunk in contentStream {
-						guard let text = chunk.text else {
-							throw AIServiceError.emptyResponse
+
+					// Branch based on backend mode
+					if backendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+						// Use direct REST API
+						let contentStream = GeminiAPIClient.shared.generateContentStream(
+							modelKey: effectiveKey,
+							prompt: prompt
+						)
+						for try await chunk in contentStream {
+							continuation.yield(chunk)
 						}
-						continuation.yield(text)
+					} else {
+						// Use Firebase AI SDK (default)
+						let contentStream: AsyncThrowingStream<GenerateContentResponse, any Error> =
+							try ai.generativeModel(modelName: effectiveKey).generateContentStream(
+								prompt)
+						for try await chunk in contentStream {
+							guard let text = chunk.text else {
+								throw AIServiceError.emptyResponse
+							}
+							continuation.yield(text)
+						}
 					}
 					continuation.finish()
 				} catch {
@@ -251,16 +313,31 @@ public class AIService: ObservableObject {
 					)
 					let effectiveKey = resolvedModelKey(for: ctx)
 					let mode = SettingsService.shared.modelSelectionMode
+					let backendMode = SettingsService.shared.aiBackendMode
 					print(
-						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube Chat"
+						"[AIService] Backend=\(backendMode.title) Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube Chat"
 					)
-					let contentStream = try ai.generativeModel(modelName: effectiveKey)
-						.generateContentStream(prompt)
-					for try await chunk in contentStream {
-						guard let text = chunk.text else {
-							throw AIServiceError.emptyResponse
+
+					// Branch based on backend mode
+					if backendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+						// Use direct REST API
+						let contentStream = GeminiAPIClient.shared.generateContentStream(
+							modelKey: effectiveKey,
+							prompt: prompt
+						)
+						for try await chunk in contentStream {
+							continuation.yield(chunk)
 						}
-						continuation.yield(text)
+					} else {
+						// Use Firebase AI SDK (default)
+						let contentStream = try ai.generativeModel(modelName: effectiveKey)
+							.generateContentStream(prompt)
+						for try await chunk in contentStream {
+							guard let text = chunk.text else {
+								throw AIServiceError.emptyResponse
+							}
+							continuation.yield(text)
+						}
 					}
 					continuation.finish()
 				} catch {
