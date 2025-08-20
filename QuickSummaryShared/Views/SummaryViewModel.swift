@@ -1,6 +1,10 @@
 import Foundation
 import SwiftData
 
+#if canImport(UIKit)
+	import UIKit
+#endif
+
 public struct SummaryResult {
 	let originalText: String
 	let summaryText: String
@@ -43,7 +47,7 @@ public class SummaryViewModel: ObservableObject {
 		guard
 			!initialText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 		else {
-			return
+			throw WebParserError.parsingFailed
 		}
 
 		isLoadingSummary = true
@@ -85,6 +89,15 @@ public class SummaryViewModel: ObservableObject {
 		usageTracker.addToTotalMinutesSaved(minutesSaved)
 		usageTracker.incrementAPICallCount()
 		isLoadingSummary = false
+
+		// Attempt review prompt (main app uses StoreKit; extension should show CTA)
+		#if canImport(UIKit) && !APP_EXTENSION
+			if let scene = UIApplication.shared.connectedScenes
+				.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+			{
+				ReviewRequestService.shared.tryPromptInAppIfEligible(windowScene: scene)
+			}
+		#endif
 
 		// Fetch suggested prompts after summary is generated
 		await fetchSuggestedPrompts()

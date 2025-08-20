@@ -8,6 +8,12 @@ struct OnboardingView: View {
     @StateObject private var settingsService = SettingsService.shared
     @Namespace private var animation
 
+    // Animations for AI info page (to sync with other pages)
+    @State private var aiShowContent = false
+    @State private var aiTextScale: CGFloat = 1.0
+    @State private var aiIconScale: CGFloat = 1.0
+    @State private var aiGlowRadius: CGFloat = 8.0
+
     // Check if this is opened from settings (when user already completed onboarding)
     private var isReviewMode: Bool {
         settingsService.hasCompletedOnboarding
@@ -56,12 +62,8 @@ struct OnboardingView: View {
                     isVisible: viewModel.selectedTab == 2
                 ).tag(2)
 
-                // Screen 4: Main App Features
-                standardPage(
-                    imageName: "doc.text.magnifyingglass",
-                    title: "Your Central Hub for Insight",
-                    description: "Paste any text or link, or open PDF directly."
-                ).tag(3)
+                // Screen 4: AI Service Info (styled)
+                aiServiceInfoPage.tag(3)
 
                 // Screen 5: All Set
                 finalPage.tag(4)
@@ -119,6 +121,106 @@ struct OnboardingView: View {
             )
             Spacer()
             Spacer()
+        }
+    }
+
+    private var aiServiceInfoPage: some View {
+        VStack {
+            Spacer()
+            VStack(spacing: 20) {
+                Image(systemName: "bolt.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 150, height: 150)
+                    .foregroundColor(.accentColor)
+                    .shadow(
+                        color: Color.accentColor.opacity(0.7),
+                        radius: aiShowContent ? aiGlowRadius : 0, y: 6
+                    )
+                    .scaleEffect(aiShowContent ? aiIconScale : 0.9)
+                    .opacity(aiShowContent ? 1 : 0)
+
+                VStack(spacing: 10) {
+                    Text("About AI Service")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .multilineTextAlignment(.center)
+                        .scaleEffect(aiShowContent ? aiTextScale : 0.9)
+
+                    VStack(alignment: .center, spacing: 12) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.blue)
+                            Text("QuickSummary uses ") + Text("Gemini AI").bold()
+                            Text(".")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text("Shared usage can sometimes cause temporary ")
+                                + Text("overload").bold()
+                            Text(".")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "switch.2")
+                                .foregroundColor(.blue)
+                            Text("Tip: switch to another ") + Text("model").bold()
+                                + Text(" to avoid it.")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "key.fill")
+                                .foregroundColor(.blue)
+                            Text("You can also bring your own free ")
+                                + Text("Gemini API key").bold() + Text(" to avoid overload.")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: 560)
+                    .multilineTextAlignment(.center)
+                    .opacity(aiShowContent ? 1 : 0)
+                }
+                .padding(.horizontal)
+            }
+
+            Spacer()
+            Spacer()
+        }
+        .onAppear(perform: handleAIPageAnimations)
+        .onChange(of: viewModel.selectedTab) { _, _ in handleAIPageAnimations() }
+    }
+
+    private func handleAIPageAnimations() {
+        let visible = (viewModel.selectedTab == 3)
+        withAnimation(.interpolatingSpring(stiffness: 100, damping: 12).delay(0.1)) {
+            aiShowContent = visible
+        }
+        if visible {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                    aiTextScale = 1.03
+                    aiIconScale = 1.05
+                    aiGlowRadius = 25.0
+                }
+            }
+        } else {
+            withAnimation(.spring()) {
+                aiTextScale = 1.0
+                aiIconScale = 1.0
+                aiGlowRadius = 8.0
+            }
         }
     }
 
