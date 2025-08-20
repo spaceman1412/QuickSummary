@@ -45,11 +45,6 @@ public class AIService: ObservableObject {
 		return AIModel.gemini20Flash.key
 	}
 
-	private func model(for ctx: ModelContextInfo) -> GenerativeModel {
-		let key = resolvedModelKey(for: ctx)
-		return ai.generativeModel(modelName: key)
-	}
-
 	/// Summarizes the given text using the specified style and length, returning a stream of text chunks.
 	public func summarizeStream(
 		text: String, summaryLength: SummaryLength = .medium, language: String = "en",
@@ -59,24 +54,24 @@ public class AIService: ObservableObject {
 			String, Error
 		>
 	{
-		print(
-			"[AIService] Using AI model: \(SettingsService.shared.selectedAIModel.title) [key: \(SettingsService.shared.selectedAIModel.key)]"
-		)
-		print("[AIService] Using summary style: \(summaryStyle.title)")
-		print("[AIService] Using summary length: \(summaryLength.title)")
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
 					let prompt = buildPrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
-					print(prompt)
 					let ctx = ModelContextInfo(
 						isYouTube: false,
 						summaryLength: summaryLength,
 						contentCharCount: text.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+					)
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -119,7 +114,11 @@ public class AIService: ObservableObject {
 						summaryLength: .medium,
 						contentCharCount: context.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print("[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) Chat")
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -177,7 +176,12 @@ public class AIService: ObservableObject {
 				summaryLength: .medium,
 				contentCharCount: content.count
 			)
-			let response = try await model(for: ctx).generateContent(prompt)
+			let effectiveKey = resolvedModelKey(for: ctx)
+			let mode = SettingsService.shared.modelSelectionMode
+			print(
+				"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SuggestedPrompts")
+			let response = try await ai.generativeModel(modelName: effectiveKey).generateContent(
+				prompt)
 
 			guard let text = response.text else {
 				return defaultPrompts
@@ -199,25 +203,25 @@ public class AIService: ObservableObject {
 			String, Error
 		>
 	{
-		print(
-			"[AIService] Using AI model: \(SettingsService.shared.selectedAIModel.title) [key: \(SettingsService.shared.selectedAIModel.key)]"
-		)
-		print("[AIService] Using summary style: \(summaryStyle.title)")
-		print("[AIService] Using summary length: \(summaryLength.title)")
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
 					let prompt = buildYouTubePrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
-					print(prompt)
 					let ctx = ModelContextInfo(
 						isYouTube: true,
 						summaryLength: summaryLength,
 						contentCharCount: text.count
 					)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+					)
 					let contentStream: AsyncThrowingStream<GenerateContentResponse, any Error> =
-						try model(for: ctx).generateContentStream(prompt)
+						try ai.generativeModel(modelName: effectiveKey).generateContentStream(
+							prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -245,7 +249,13 @@ public class AIService: ObservableObject {
 						summaryLength: .medium,
 						contentCharCount: transcript.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube Chat"
+					)
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -277,7 +287,8 @@ public class AIService: ObservableObject {
 		if language == "auto" {
 			return """
 				Language Policy:
-				- Output MUST be entirely in the predominant natural language of the content to summarize. If unclear or mixed, use \(fallbackLanguageName).
+				- Detect the predominant natural language of the content to summarize.
+				- Output MUST be entirely in the detected language. If unclear or mixed, use \(fallbackLanguageName).
 				- Do not explain or mention language choice. Start directly with the summary.
 
 				Content to summarize:
@@ -323,7 +334,8 @@ public class AIService: ObservableObject {
 		if language == "auto" {
 			return """
 				Language Policy:
-				- Output MUST be entirely in the predominant natural language of the transcript. If unclear or mixed, use \(fallbackLanguageName).
+				- Detect the predominant natural language of the transcript.
+				- Output MUST be entirely in that language. If unclear or mixed, use \(fallbackLanguageName).
 				- Do not explain or mention language choice.
 
 				Transcript:
