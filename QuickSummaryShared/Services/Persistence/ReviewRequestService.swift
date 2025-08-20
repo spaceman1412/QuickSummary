@@ -20,8 +20,6 @@ public final class ReviewRequestService: ObservableObject {
         set { userDefaults.set(newValue, forKey: Keys.lastPromptedDate) }
     }
 
-    // Version-based gating removed by request; cooldown uses only lastPromptedDate
-
     public func shouldPrompt(totalSummaries: Int) -> Bool {
         guard totalSummaries >= AppConstants.Review.minSummariesForPrompt else { return false }
 
@@ -38,7 +36,6 @@ public final class ReviewRequestService: ObservableObject {
     }
 
     public func markUserTappedRate() {
-        // Keep cooldown behavior only
         markPromptShown()
     }
 
