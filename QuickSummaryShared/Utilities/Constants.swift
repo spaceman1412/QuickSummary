@@ -44,6 +44,20 @@ public struct AppConstants {
 			"Provide a comprehensive summary that includes all major points, supporting details, and key insights."
 	}
 
+	// MARK: - Review & App Store
+	public struct Review {
+		/// Minimum successful summaries before first prompt
+		public static let minSummariesForPrompt: Int = 3
+		/// Cool‑off window (days) between prompts
+		public static let cooldownDays: Int = 7
+		/// Your App Store app ID (update before release)
+		public static let appStoreID: String = "6748961856"
+		/// App Store write review URL
+		public static var appStoreWriteReviewURL: URL? {
+			URL(string: "itms-apps://itunes.apple.com/app/id\(appStoreID)?action=write-review")
+		}
+	}
+
 	public static let defaultSuggestedPrompts = [
 		"What are the key takeaways?",
 		"Can you explain this in simpler terms?",
