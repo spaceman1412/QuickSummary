@@ -5,6 +5,7 @@ import SwiftUI
 struct ContentView: View {
 	@Environment(\.modelContext) private var modelContext
 	@StateObject private var settingsService = SettingsService.shared
+	@State private var showWhatsNew = false
 
 	var body: some View {
 		TabView {
@@ -25,8 +26,24 @@ struct ContentView: View {
 		}
 		.tint(.blue)
 		.fullScreenCover(
-			isPresented: .constant(!settingsService.hasCompletedOnboarding)) {
+			isPresented: .constant(!settingsService.hasCompletedOnboarding)
+		) {
 			OnboardingView(hasCompletedOnboarding: $settingsService.hasCompletedOnboarding)
+		}
+		.onAppear {
+			let version = Bundle.main.appVersion ?? "1.1.0"
+			if shouldShowWhatsNew(version: version)
+				&& SettingsService.shared.hasCompletedOnboarding
+			{
+				showWhatsNew = true
+			}
+		}
+		.fullScreenCover(isPresented: $showWhatsNew) {
+			let version = Bundle.main.appVersion ?? "1.1.0"
+			WhatsNewView(version: version) {
+				markWhatsNewShown(version: version)
+				showWhatsNew = false
+			}
 		}
 	}
 }
