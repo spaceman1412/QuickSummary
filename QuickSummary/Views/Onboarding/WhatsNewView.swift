@@ -35,7 +35,7 @@ struct WhatsNewView: View {
                     .opacity(showContent ? 1 : 0)
 
                 VStack(spacing: 10) {
-                    Text("What’s New in \(version)")
+                    Text("Big updates in \(version)")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
                         .scaleEffect(showContent ? textScale : 0.9)
