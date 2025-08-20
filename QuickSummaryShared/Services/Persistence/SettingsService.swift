@@ -19,6 +19,7 @@ public class SettingsService: ObservableObject {
     static let hasCompletedOnboarding = "hasCompletedOnboarding"
     static let summaryLanguage = "summaryLanguage"
     static let summaryLength = "selectedSummaryLength"
+    static let whatsNewLastShownVersion = "whatsNew_lastShownVersion"
   }
 
   @Published public var summaryLanguage: String {
@@ -120,6 +121,16 @@ public class SettingsService: ObservableObject {
     modelSelectionMode = loadModelSelectionMode()
     languageSelectionMode = loadLanguageSelectionMode()
     aiBackendMode = loadAIBackendMode()
+  }
+
+  // MARK: - What's New gating
+  public func shouldShowWhatsNew(for version: String) -> Bool {
+    let last = userDefaults.string(forKey: Keys.whatsNewLastShownVersion)
+    return last != version
+  }
+
+  public func markWhatsNewShown(version: String) {
+    userDefaults.set(version, forKey: Keys.whatsNewLastShownVersion)
   }
 
   public func markOnboardingCompleted() {
