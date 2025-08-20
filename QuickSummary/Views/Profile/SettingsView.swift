@@ -6,9 +6,13 @@ struct SettingsView: View {
 
   var body: some View {
     NavigationStack {
-      List {
+		List {
+        // AI Backend selection section
+        aiBackendSection
+
         // AI Model selection section
         aiModelSection
+
         // Summary Configuration section (combines style and length)
         summaryConfigurationSection
 
@@ -28,6 +32,63 @@ struct SettingsView: View {
       .navigationTitle("Settings")
       .fullScreenCover(isPresented: $viewModel.showOnboarding) {
         OnboardingView(hasCompletedOnboarding: $viewModel.showOnboarding)
+      }
+    }
+  }
+
+  private var aiBackendSection: some View {
+    Section("AI Backend") {
+      Picker("Backend", selection: $viewModel.settingsService.aiBackendMode) {
+        ForEach(AIBackendMode.allCases) { mode in
+          Text(mode.title).tag(mode)
+        }
+      }
+      .pickerStyle(SegmentedPickerStyle())
+
+      if viewModel.settingsService.aiBackendMode == .customAPI {
+        VStack(alignment: .leading, spacing: 12) {
+          SecureField("Enter your Gemini API key", text: $viewModel.customAPIKey)
+            .textFieldStyle(.roundedBorder)
+            .onSubmit {
+              if !viewModel.customAPIKey.isEmpty {
+                viewModel.saveAPIKey()
+              }
+            }
+
+          HStack {
+            Button("Save Key") {
+              hideKeyboard()
+              viewModel.saveAPIKey()
+            }
+            .disabled(viewModel.customAPIKey.isEmpty)
+
+            Spacer()
+
+            if viewModel.hasStoredAPIKey {
+              Button("Clear Key") {
+                viewModel.clearAPIKey()
+              }
+              .foregroundColor(.red)
+            }
+          }
+
+          if let keyStatus = viewModel.apiKeyStatus {
+            Label(keyStatus, systemImage: viewModel.apiKeyStatusIcon)
+              .font(.caption)
+              .foregroundColor(viewModel.apiKeyStatusColor)
+          }
+
+          Text(
+            "Get your free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)"
+          )
+          .font(.caption)
+          .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
+      } else {
+        Text("Uses Firebase AI SDK (default)")
+          .font(.caption)
+          .foregroundColor(.secondary)
       }
     }
   }
@@ -100,7 +161,7 @@ struct SettingsView: View {
         }
       }
       .pickerStyle(SegmentedPickerStyle())
-      .onChange(of: viewModel.settingsService.languageSelectionMode) { newValue in
+      .onChange(of: viewModel.settingsService.languageSelectionMode) { _, newValue in
         if newValue == .auto { viewModel.settingsService.summaryLanguage = "auto" }
       }
 

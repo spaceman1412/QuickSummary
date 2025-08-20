@@ -62,6 +62,7 @@ public class SummaryViewModel: ObservableObject {
 				text: initialText, summaryLength: summaryLength, language: language,
 				summaryStyle: summaryStyle)
 
+		print("Stream \(stream)")
 		for try await chunk in stream {
 			streamingSummaryText += chunk
 		}

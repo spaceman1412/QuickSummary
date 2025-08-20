@@ -32,9 +32,49 @@ struct SummarySettingsView: View {
         }
     }
 
+    // Determines the actual backend mode being used (considering API key availability)
+    private var effectiveBackendMode: AIBackendMode {
+        if settingsService.aiBackendMode == .customAPI && KeychainService.shared.hasAPIKey() {
+            return .customAPI
+        } else {
+            return .managedFirebase
+        }
+    }
+
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("AI Backend")) {
+                    HStack {
+                        Image(
+                            systemName: effectiveBackendMode == .customAPI
+                                ? "key.fill" : "cloud.fill"
+                        )
+                        .foregroundColor(
+                            effectiveBackendMode == .customAPI ? .orange : .blue)
+                        Text(effectiveBackendMode.title)
+                        Spacer()
+                        Text(effectiveBackendMode.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if settingsService.aiBackendMode == .customAPI {
+                        if KeychainService.shared.hasAPIKey() {
+                            Label("Custom API key configured", systemImage: "checkmark.circle")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        } else {
+                            Label(
+                                "No API key found. Falling back to Managed backend.",
+                                systemImage: "exclamationmark.triangle"
+                            )
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                        }
+                    }
+                }
+
                 Section(header: Text("Model Selection")) {
                     Picker("Mode", selection: $settingsService.modelSelectionMode) {
                         ForEach(ModelSelectionMode.allCases) { mode in

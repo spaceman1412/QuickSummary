@@ -10,6 +10,7 @@ public class SettingsService: ObservableObject {
   private static let summaryLengthKey = "selectedSummaryLength"
   private static let modelSelectionModeKey = "modelSelectionMode"
   private static let languageSelectionModeKey = "languageSelectionMode"
+  private static let aiBackendModeKey = "aiBackendMode"
 
   private let userDefaults: UserDefaults
 
@@ -69,6 +70,12 @@ public class SettingsService: ObservableObject {
     }
   }
 
+  @Published public var aiBackendMode: AIBackendMode {
+    didSet {
+      userDefaults.set(aiBackendMode.rawValue, forKey: SettingsService.aiBackendModeKey)
+    }
+  }
+
   // MARK: - Onboarding
   @Published public var hasCompletedOnboarding: Bool {
     didSet {
@@ -92,6 +99,7 @@ public class SettingsService: ObservableObject {
     self.languageSelectionMode = .auto
     self.selectedSummaryStyle = .default
     self.selectedSummaryLength = .medium
+    self.aiBackendMode = .managedFirebase
 
     // Load saved values
     self.summaryLanguage = loadSummaryLanguage()
@@ -100,6 +108,7 @@ public class SettingsService: ObservableObject {
     self.selectedSummaryLength = loadSelectedSummaryLength()
     self.modelSelectionMode = loadModelSelectionMode()
     self.languageSelectionMode = loadLanguageSelectionMode()
+    self.aiBackendMode = loadAIBackendMode()
   }
 
   // MARK: - Methods
@@ -110,6 +119,7 @@ public class SettingsService: ObservableObject {
     selectedSummaryLength = loadSelectedSummaryLength()
     modelSelectionMode = loadModelSelectionMode()
     languageSelectionMode = loadLanguageSelectionMode()
+    aiBackendMode = loadAIBackendMode()
   }
 
   public func markOnboardingCompleted() {
@@ -123,6 +133,7 @@ public class SettingsService: ObservableObject {
     selectedSummaryLength = .medium
     modelSelectionMode = .smart
     languageSelectionMode = .auto
+    aiBackendMode = .managedFirebase
   }
 
   private func loadSummaryLanguage() -> String {
@@ -154,6 +165,12 @@ public class SettingsService: ObservableObject {
   private func loadLanguageSelectionMode() -> LanguageSelectionMode {
     let raw = userDefaults.string(forKey: SettingsService.languageSelectionModeKey)
     return LanguageSelectionMode(rawValue: raw ?? LanguageSelectionMode.auto.rawValue) ?? .auto
+  }
+
+  private func loadAIBackendMode() -> AIBackendMode {
+    let raw = userDefaults.string(forKey: SettingsService.aiBackendModeKey)
+    return AIBackendMode(rawValue: raw ?? AIBackendMode.managedFirebase.rawValue)
+      ?? .managedFirebase
   }
 
   private static func defaultLanguageCode() -> String {
