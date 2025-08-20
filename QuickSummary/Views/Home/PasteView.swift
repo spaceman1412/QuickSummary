@@ -16,6 +16,7 @@ struct PasteView: View {
   @State private var isShowingDocumentPicker = false
   @State private var animatedCircle = false
   @State private var detectedType: InputType?
+  @State private var summaryViewModel: SummaryViewModel?
 
   func readTextFromClipboard() -> String? {
     // Get a reference to the general pasteboard
@@ -107,13 +108,17 @@ struct PasteView: View {
       .navigationTitle("QuickSummary")
       .navigationBarTitleDisplayMode(.inline)
       .navigationDestination(isPresented: $showSummaryScreen) {
-        if let text = extractedText, let type = detectedType {
-          let summaryViewModel = SummaryViewModel(
-            initialText: text, initialTitle: fetchedTitle, inputType: type)
+        if let viewModel = summaryViewModel {
           SummaryView(
-            viewModel: summaryViewModel,
-            onSave: { showSummaryScreen = false },
-            onCancel: { showSummaryScreen = false },
+            viewModel: viewModel,
+            onSave: {
+              showSummaryScreen = false
+              summaryViewModel = nil
+            },
+            onCancel: {
+              showSummaryScreen = false
+              summaryViewModel = nil
+            },
             modelContext: modelContext
           )
         }
@@ -138,6 +143,11 @@ struct PasteView: View {
         let summaryText = try await SummaryGenerator.processInput(input: text)
         detectedType = getInputType(text)
         extractedText = summaryText
+        // Initialize a stable SummaryViewModel instance before navigating
+        if summaryViewModel == nil, let type = detectedType, let preparedText = extractedText {
+          summaryViewModel = SummaryViewModel(
+            initialText: preparedText, initialTitle: fetchedTitle, inputType: type)
+        }
         isLoading = false
         showSummaryScreen = true
       } catch {
