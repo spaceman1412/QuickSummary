@@ -88,7 +88,7 @@ struct ShareExtensionRootView: View {
 				}
 				.navigationDestination(isPresented: $showSummaryScreen) {
 					let _ = print("MyView body is being re-evaluated.")
-					
+
 					if let viewModel = summaryViewModel {
 						SummaryView(
 							viewModel: viewModel,
@@ -132,6 +132,11 @@ struct ShareExtensionRootView: View {
 								inputType: detectedContentType)
 						}
 						showSummaryScreen = true
+					} else {
+						throw NSError(
+							domain: "com.catboss.QuickSummary.QuickSummaryShareExtension",
+							code: 101,
+							userInfo: [NSLocalizedDescriptionKey: ErrorMessages.parsingFailed])
 					}
 				} catch let error {
 					self.error = error
@@ -146,16 +151,31 @@ struct ShareExtensionRootView: View {
 		VStack(spacing: 12) {
 			contentTypeSection
 
-			// Show current AI model
+			// Show AI mode/model
 			HStack(spacing: 6) {
-				Label(setting.selectedAIModel.title, systemImage: "bolt.circle")
+				if setting.modelSelectionMode == .smart {
+					Label(
+						"AI Mode: \(setting.modelSelectionMode.title)", systemImage: "bolt.circle"
+					)
+					.font(.caption)
+					.foregroundColor(.secondary)
+				} else {
+					Label("AI Model: \(setting.selectedAIModel.title)", systemImage: "bolt.circle")
+						.font(.caption)
+						.foregroundColor(.secondary)
+				}
+				Spacer()
+			}
+
+			HStack(spacing: 6) {
+				Label(setting.selectedSummaryStyle.title, systemImage: "doc.text.fill")
 					.font(.caption)
 					.foregroundColor(.secondary)
 				Spacer()
 			}
 
 			HStack(spacing: 6) {
-				Label(setting.selectedSummaryStyle.title, systemImage: "doc.text.fill")
+				Label(languageDisplayText, systemImage: "globe")
 					.font(.caption)
 					.foregroundColor(.secondary)
 				Spacer()
@@ -280,5 +300,15 @@ struct ShareExtensionRootView: View {
 
 	private var detectedContentType: InputType {
 		getInputType(initialText)
+	}
+
+	private var languageDisplayText: String {
+		if setting.summaryLanguage == "auto" {
+			return "Language: Auto Detect"
+		}
+		let name =
+			Locale.current.localizedString(forLanguageCode: setting.summaryLanguage)
+			?? setting.summaryLanguage
+		return "Language: \(name)"
 	}
 }

@@ -1,5 +1,7 @@
 import Foundation
+import SwiftData
 
+@MainActor
 public class SettingsService: ObservableObject {
   public static let shared = SettingsService()
 
@@ -7,6 +9,7 @@ public class SettingsService: ObservableObject {
   private static let summaryStyleKey = "selectedSummaryStyle"
   private static let summaryLengthKey = "selectedSummaryLength"
   private static let modelSelectionModeKey = "modelSelectionMode"
+  private static let languageSelectionModeKey = "languageSelectionMode"
 
   private let userDefaults: UserDefaults
 
@@ -33,6 +36,23 @@ public class SettingsService: ObservableObject {
   @Published public var modelSelectionMode: ModelSelectionMode {
     didSet {
       userDefaults.set(modelSelectionMode.rawValue, forKey: SettingsService.modelSelectionModeKey)
+    }
+  }
+
+  @Published public var languageSelectionMode: LanguageSelectionMode {
+    didSet {
+      userDefaults.set(
+        languageSelectionMode.rawValue, forKey: SettingsService.languageSelectionModeKey)
+      // Sync summaryLanguage only on meaningful transitions
+      if languageSelectionMode == .manual {
+        // If coming from auto and language is currently auto, initialize to device default
+        if summaryLanguage == "auto" {
+          summaryLanguage = SettingsService.defaultLanguageCode()
+        }
+      } else {
+        // Auto mode always uses sentinel "auto"
+        summaryLanguage = "auto"
+      }
     }
   }
 
@@ -69,6 +89,7 @@ public class SettingsService: ObservableObject {
     self.summaryLanguage = SettingsService.defaultLanguageCode()
     self.selectedAIModel = .gemini20FlashLite
     self.modelSelectionMode = .smart
+    self.languageSelectionMode = .auto
     self.selectedSummaryStyle = .default
     self.selectedSummaryLength = .medium
 
@@ -78,6 +99,7 @@ public class SettingsService: ObservableObject {
     self.selectedSummaryStyle = loadSelectedSummaryStyle()
     self.selectedSummaryLength = loadSelectedSummaryLength()
     self.modelSelectionMode = loadModelSelectionMode()
+    self.languageSelectionMode = loadLanguageSelectionMode()
   }
 
   // MARK: - Methods
@@ -87,6 +109,7 @@ public class SettingsService: ObservableObject {
     selectedSummaryStyle = loadSelectedSummaryStyle()
     selectedSummaryLength = loadSelectedSummaryLength()
     modelSelectionMode = loadModelSelectionMode()
+    languageSelectionMode = loadLanguageSelectionMode()
   }
 
   public func markOnboardingCompleted() {
@@ -99,6 +122,7 @@ public class SettingsService: ObservableObject {
     selectedSummaryStyle = .default
     selectedSummaryLength = .medium
     modelSelectionMode = .smart
+    languageSelectionMode = .auto
   }
 
   private func loadSummaryLanguage() -> String {
@@ -125,6 +149,11 @@ public class SettingsService: ObservableObject {
   private func loadModelSelectionMode() -> ModelSelectionMode {
     let raw = userDefaults.string(forKey: SettingsService.modelSelectionModeKey)
     return ModelSelectionMode(rawValue: raw ?? ModelSelectionMode.smart.rawValue) ?? .smart
+  }
+
+  private func loadLanguageSelectionMode() -> LanguageSelectionMode {
+    let raw = userDefaults.string(forKey: SettingsService.languageSelectionModeKey)
+    return LanguageSelectionMode(rawValue: raw ?? LanguageSelectionMode.auto.rawValue) ?? .auto
   }
 
   private static func defaultLanguageCode() -> String {

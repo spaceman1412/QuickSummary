@@ -45,11 +45,6 @@ public class AIService: ObservableObject {
 		return AIModel.gemini20Flash.key
 	}
 
-	private func model(for ctx: ModelContextInfo) -> GenerativeModel {
-		let key = resolvedModelKey(for: ctx)
-		return ai.generativeModel(modelName: key)
-	}
-
 	/// Summarizes the given text using the specified style and length, returning a stream of text chunks.
 	public func summarizeStream(
 		text: String, summaryLength: SummaryLength = .medium, language: String = "en",
@@ -59,11 +54,6 @@ public class AIService: ObservableObject {
 			String, Error
 		>
 	{
-		print(
-			"[AIService] Using AI model: \(SettingsService.shared.selectedAIModel.title) [key: \(SettingsService.shared.selectedAIModel.key)]"
-		)
-		print("[AIService] Using summary style: \(summaryStyle.title)")
-		print("[AIService] Using summary length: \(summaryLength.title)")
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
@@ -75,7 +65,13 @@ public class AIService: ObservableObject {
 						summaryLength: summaryLength,
 						contentCharCount: text.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+					)
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -97,23 +93,32 @@ public class AIService: ObservableObject {
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
-					let languageName =
-						Locale.current.localizedString(forLanguageCode: language)
+					let fallbackCode = (language == "auto") ? "en" : language
+					let fallbackLanguageName =
+						Locale.current.localizedString(forLanguageCode: fallbackCode)
 						?? "English"
 					let prompt = """
-						Based on this content:
+						Language Policy:
+						- Respond strictly in the same language as the user's question.
+						- If you cannot confidently determine the language, respond in \(fallbackLanguageName).
+						- Do not explain or mention the language choice. Start directly with the answer.
+
+						Context:
 						\(context)
 
-						User question: \(message)
-
-						Please provide a helpful and accurate response based on the content above in \(languageName).
+						User question:
+						\(message)
 						"""
 					let ctx = ModelContextInfo(
 						isYouTube: false,
 						summaryLength: .medium,
 						contentCharCount: context.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print("[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) Chat")
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -141,20 +146,42 @@ public class AIService: ObservableObject {
 		]
 
 		do {
-			let languageName =
-				Locale.current.localizedString(forLanguageCode: language) ?? "English"
-			let prompt = """
-				Based on the following text, generate three concise and relevant follow-up questions in \(languageName).
-				Return only the questions, each on a new line.
+			let fallbackCode = (language == "auto") ? "en" : language
+			let fallbackLanguageName =
+				Locale.current.localizedString(forLanguageCode: fallbackCode) ?? "English"
+			let prompt: String
+			if language == "auto" {
+				prompt = """
+					Language Policy:
+					- Generate the questions in the same language as the provided text.
+					- If you cannot determine the language, use \(fallbackLanguageName).
+					- Return only the questions, each on a new line.
 
-				Text: "\(content)"
-				"""
+					Text:
+					"""
+					+ content
+			} else {
+				let languageName =
+					Locale.current.localizedString(forLanguageCode: language) ?? "English"
+				prompt = """
+					Generate three concise and relevant follow-up questions in \(languageName).
+					Return only the questions, each on a new line.
+
+					Text:
+					"""
+					+ content
+			}
 			let ctx = ModelContextInfo(
 				isYouTube: false,
 				summaryLength: .medium,
 				contentCharCount: content.count
 			)
-			let response = try await model(for: ctx).generateContent(prompt)
+			let effectiveKey = resolvedModelKey(for: ctx)
+			let mode = SettingsService.shared.modelSelectionMode
+			print(
+				"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) SuggestedPrompts")
+			let response = try await ai.generativeModel(modelName: effectiveKey).generateContent(
+				prompt)
 
 			guard let text = response.text else {
 				return defaultPrompts
@@ -176,11 +203,6 @@ public class AIService: ObservableObject {
 			String, Error
 		>
 	{
-		print(
-			"[AIService] Using AI model: \(SettingsService.shared.selectedAIModel.title) [key: \(SettingsService.shared.selectedAIModel.key)]"
-		)
-		print("[AIService] Using summary style: \(summaryStyle.title)")
-		print("[AIService] Using summary length: \(summaryLength.title)")
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
@@ -192,8 +214,14 @@ public class AIService: ObservableObject {
 						summaryLength: summaryLength,
 						contentCharCount: text.count
 					)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube SummaryStyle=\(summaryStyle.title) Length=\(summaryLength.title)"
+					)
 					let contentStream: AsyncThrowingStream<GenerateContentResponse, any Error> =
-						try model(for: ctx).generateContentStream(prompt)
+						try ai.generativeModel(modelName: effectiveKey).generateContentStream(
+							prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -221,7 +249,13 @@ public class AIService: ObservableObject {
 						summaryLength: .medium,
 						contentCharCount: transcript.count
 					)
-					let contentStream = try model(for: ctx).generateContentStream(prompt)
+					let effectiveKey = resolvedModelKey(for: ctx)
+					let mode = SettingsService.shared.modelSelectionMode
+					print(
+						"[AIService] Mode=\(mode.title) EffectiveModelKey=\(effectiveKey) YouTube Chat"
+					)
+					let contentStream = try ai.generativeModel(modelName: effectiveKey)
+						.generateContentStream(prompt)
 					for try await chunk in contentStream {
 						guard let text = chunk.text else {
 							throw AIServiceError.emptyResponse
@@ -245,21 +279,42 @@ public class AIService: ObservableObject {
 		let stylePrompt = summaryStyle.promptTemplate
 		let lengthModifier = summaryLength.lengthModifier
 
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
-		return """
-			Instructions:
-			1) Write the summary in \(languageName).
-			2) Follow this style: \(stylePrompt)
-			3) Enforce this length guidance: \(lengthModifier)
+		if language == "auto" {
+			return """
+				Language Policy:
+				- Detect the predominant natural language of the content to summarize.
+				- Output MUST be entirely in the detected language. If unclear or mixed, use \(fallbackLanguageName).
+				- Do not explain or mention language choice. Start directly with the summary.
 
-			Content to summarize:
-			\(text)
+				Content to summarize:
+				\(text)
 
-			Summary:
-			"""
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				"""
+		} else {
+			let languageName =
+				Locale.current.localizedString(forLanguageCode: language)
+				?? "English"
+			return """
+				Language Policy:
+				- Output MUST be entirely in \(languageName).
+				- Do not use any other language or mention language choice.
+
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+
+				Content to summarize:
+				\(text)
+				"""
+		}
 	}
 
 	private func buildYouTubePrompt(
@@ -271,40 +326,67 @@ public class AIService: ObservableObject {
 		let stylePrompt = summaryStyle.promptTemplate
 		let lengthModifier = summaryLength.lengthModifier
 
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
-		return """
-			Instructions:
-			1) Write the summary in \(languageName).
-			2) Follow this style: \(stylePrompt)
-			3) Enforce this length guidance: \(lengthModifier)
-			4) Include timestamps like [HH:MM:SS] for each point.
+		if language == "auto" {
+			return """
+				Language Policy:
+				- Detect the predominant natural language of the transcript.
+				- Output MUST be entirely in that language. If unclear or mixed, use \(fallbackLanguageName).
+				- Do not explain or mention language choice.
 
-			Transcript:
-			\(text)
+				Transcript:
+				\(text)
 
-			Summary with timestamps:
-			"""
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				3) Include timestamps like [HH:MM:SS] for each point.
+				"""
+		} else {
+			let languageName =
+				Locale.current.localizedString(forLanguageCode: language)
+				?? "English"
+			return """
+				Language Policy:
+				- Output MUST be entirely in \(languageName).
+				- Do not use any other language or mention language choice.
+
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				3) Include timestamps like [HH:MM:SS] for each point.
+
+				Transcript:
+				\(text)
+				"""
+		}
 	}
 
 	private func buildYouTubeChatPrompt(
 		message: String, transcript: String, language: String = "en"
 	) -> String {
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
 		return """
+			Language Policy:
+			- Respond strictly in the same language as the user's question.
+			- If you cannot confidently determine the language, respond in \(fallbackLanguageName).
+			- Do not explain or mention language choice. Start directly with the answer.
+
 			You are an expert at analyzing YouTube videos and answering questions about their content.
 
 			Here is the YouTube Transcript:
 			\(transcript)
 
-			User question: \(message)
-
-			Please answer the question in \(languageName) as if you had watched the video, referencing timestamps and video structure where relevant. If the user asks about a specific time, focus your answer on that section. If you don't know the answer, say so.
+			User question:
+			\(message)
 			"""
 	}
 }

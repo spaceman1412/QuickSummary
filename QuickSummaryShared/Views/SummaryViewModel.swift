@@ -144,7 +144,8 @@ public class SummaryViewModel: ObservableObject {
 					message: userMessage, transcript: initialText, language: language)
 				: aiService.chatStream(
 					message: userMessage,
-					context: initialText
+					context: initialText,
+					language: language
 				)
 
 			for try await chunk in stream {

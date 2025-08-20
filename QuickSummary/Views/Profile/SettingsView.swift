@@ -36,7 +36,7 @@ struct SettingsView: View {
     Section("AI Model") {
       // Selection mode
       Picker("Mode", selection: $viewModel.settingsService.modelSelectionMode) {
-        ForEach(ModelSelectionMode.allCases, id: \.self) { mode in
+        ForEach(ModelSelectionMode.allCases) { mode in
           Text(mode.title).tag(mode)
         }
       }
@@ -44,7 +44,7 @@ struct SettingsView: View {
 
       if viewModel.settingsService.modelSelectionMode == .manual {
         Picker("AI Model", selection: $viewModel.settingsService.selectedAIModel) {
-          ForEach(AIModel.allCases, id: \.self) { model in
+          ForEach(AIModel.allCases) { model in
             Text(model.title).tag(model)
           }
         }
@@ -67,7 +67,7 @@ struct SettingsView: View {
       // Summary Style
       VStack(alignment: .leading, spacing: 8) {
         Picker("Summary Style", selection: $viewModel.settingsService.selectedSummaryStyle) {
-          ForEach(SummaryStyle.allCases, id: \.self) { style in
+          ForEach(SummaryStyle.allCases) { style in
             Text(style.title).tag(style)
           }
         }
@@ -82,7 +82,7 @@ struct SettingsView: View {
       // Summary Length
       VStack(alignment: .leading, spacing: 8) {
         Picker("Summary Length", selection: $viewModel.settingsService.selectedSummaryLength) {
-          ForEach(SummaryLength.allCases, id: \.self) { length in
+          ForEach(SummaryLength.allCases) { length in
             Text(length.title).tag(length)
           }
         }
@@ -94,59 +94,72 @@ struct SettingsView: View {
 
   private var languageSection: some View {
     Section("Summary Language") {
-      Button {
-        viewModel.languageSheetPresented = true
-      } label: {
-        HStack {
-          Text("Summary Language")
-          Spacer()
-          if let selected = viewModel.supportedLanguages.first(where: {
-            $0.code == viewModel.settingsService.summaryLanguage
-          }) {
-            Text(selected.name)
-              .foregroundColor(.blue)
-          } else {
-            Text("Select")
-              .foregroundColor(.secondary)
-          }
-          Image(systemName: "chevron.right")
-            .foregroundColor(.secondary)
+      Picker("Mode", selection: $viewModel.settingsService.languageSelectionMode) {
+        ForEach(LanguageSelectionMode.allCases) { mode in
+          Text(mode.title).tag(mode)
         }
       }
-      .sheet(isPresented: $viewModel.languageSheetPresented) {
-        NavigationStack {
-          VStack {
-            SearchBar(text: $viewModel.languageSearchText, placeholder: "Search languages")
-              .padding(.horizontal)
-            List {
-              ForEach(viewModel.filteredLanguages, id: \.code) { lang in
-                Button {
-                  viewModel.settingsService.summaryLanguage = lang.code
-                  viewModel.languageSheetPresented = false
-                } label: {
-                  HStack {
-                    Text(lang.name)
-                    if lang.code == viewModel.settingsService.summaryLanguage {
-                      Spacer()
-                      Image(systemName: "checkmark")
-                        .foregroundColor(.accentColor)
+      .pickerStyle(SegmentedPickerStyle())
+      .onChange(of: viewModel.settingsService.languageSelectionMode) { newValue in
+        if newValue == .auto { viewModel.settingsService.summaryLanguage = "auto" }
+      }
+
+      if viewModel.settingsService.languageSelectionMode == .manual {
+        Button {
+          viewModel.languageSheetPresented = true
+        } label: {
+          HStack {
+            Text("Summary Language")
+            Spacer()
+            if let selected = viewModel.supportedLanguages.first(where: {
+              $0.code == viewModel.settingsService.summaryLanguage
+            }) {
+              Text(selected.name)
+                .foregroundColor(.blue)
+            } else {
+              Text("Select")
+                .foregroundColor(.secondary)
+            }
+            Image(systemName: "chevron.right")
+              .foregroundColor(.secondary)
+          }
+        }
+        .sheet(isPresented: $viewModel.languageSheetPresented) {
+          NavigationStack {
+            VStack {
+              SearchBar(text: $viewModel.languageSearchText, placeholder: "Search languages")
+                .padding(.horizontal)
+              List {
+                ForEach(viewModel.filteredLanguages, id: \.code) { lang in
+                  Button {
+                    viewModel.settingsService.summaryLanguage = lang.code
+                    viewModel.languageSheetPresented = false
+                  } label: {
+                    HStack {
+                      Text(lang.name)
+                      if lang.code == viewModel.settingsService.summaryLanguage {
+                        Spacer()
+                        Image(systemName: "checkmark")
+                          .foregroundColor(.accentColor)
+                      }
                     }
                   }
                 }
               }
             }
-          }
-          .navigationTitle("Select Language")
-          .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-              Button("Cancel") { viewModel.languageSheetPresented = false }
+            .navigationTitle("Select Language")
+            .toolbar {
+              ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { viewModel.languageSheetPresented = false }
+              }
             }
           }
         }
+      } else {
+        Text("Auto Detect (matches input/question language; chat always mirrors the question)")
+          .font(.caption)
+          .foregroundColor(.secondary)
       }
-      Text("Summaries will be generated in the selected language.")
-        .font(.caption)
-        .foregroundColor(.secondary)
     }
   }
 

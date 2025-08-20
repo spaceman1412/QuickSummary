@@ -80,6 +80,8 @@ public struct SummaryView: View {
 			SummarySettingsView()
 		}
 		.task {
+			// Ensure we have the latest user settings (AI model mode, language, etc.)
+			SettingsService.shared.refreshSettings()
 			do {
 				try await viewModel.processSummary()
 			} catch {
