@@ -75,18 +75,35 @@ struct SummarySettingsView: View {
                 }
 
                 Section(header: Text("Language")) {
-                    Button(action: {
-                        languageSheetPresented = true
-                    }) {
-                        HStack {
-                            Text("Select Language")
-                            Spacer()
-                            if let languageName = supportedLanguages.first(where: {
-                                $0.code == settingsService.summaryLanguage
-                            })?.name {
-                                Text(languageName)
-                                    .foregroundColor(.secondary)
+                    Picker("Mode", selection: $settingsService.languageSelectionMode) {
+                        ForEach(LanguageSelectionMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    if settingsService.languageSelectionMode == .manual {
+                        Button(action: {
+                            languageSheetPresented = true
+                        }) {
+                            HStack {
+                                Text("Select Language")
+                                Spacer()
+                                Text(
+                                    supportedLanguages.first(where: {
+                                        $0.code == settingsService.summaryLanguage
+                                    })?.name ?? settingsService.summaryLanguage
+                                )
+                                .foregroundColor(.secondary)
                             }
+                        }
+                    } else {
+                        HStack(spacing: 6) {
+                            Image(systemName: "globe")
+                                .foregroundColor(.secondary)
+                            Text("Auto Detect (matches input/question language)")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
                         }
                     }
                 }

@@ -70,6 +70,7 @@ public class AIService: ObservableObject {
 					let prompt = buildPrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
+					print(prompt)
 					let ctx = ModelContextInfo(
 						isYouTube: false,
 						summaryLength: summaryLength,
@@ -97,16 +98,21 @@ public class AIService: ObservableObject {
 		return AsyncThrowingStream { continuation in
 			Task {
 				do {
-					let languageName =
-						Locale.current.localizedString(forLanguageCode: language)
+					let fallbackCode = (language == "auto") ? "en" : language
+					let fallbackLanguageName =
+						Locale.current.localizedString(forLanguageCode: fallbackCode)
 						?? "English"
 					let prompt = """
-						Based on this content:
+						Language Policy:
+						- Respond strictly in the same language as the user's question.
+						- If you cannot confidently determine the language, respond in \(fallbackLanguageName).
+						- Do not explain or mention the language choice. Start directly with the answer.
+
+						Context:
 						\(context)
 
-						User question: \(message)
-
-						Please provide a helpful and accurate response based on the content above in \(languageName).
+						User question:
+						\(message)
 						"""
 					let ctx = ModelContextInfo(
 						isYouTube: false,
@@ -141,14 +147,31 @@ public class AIService: ObservableObject {
 		]
 
 		do {
-			let languageName =
-				Locale.current.localizedString(forLanguageCode: language) ?? "English"
-			let prompt = """
-				Based on the following text, generate three concise and relevant follow-up questions in \(languageName).
-				Return only the questions, each on a new line.
+			let fallbackCode = (language == "auto") ? "en" : language
+			let fallbackLanguageName =
+				Locale.current.localizedString(forLanguageCode: fallbackCode) ?? "English"
+			let prompt: String
+			if language == "auto" {
+				prompt = """
+					Language Policy:
+					- Generate the questions in the same language as the provided text.
+					- If you cannot determine the language, use \(fallbackLanguageName).
+					- Return only the questions, each on a new line.
 
-				Text: "\(content)"
-				"""
+					Text:
+					"""
+					+ content
+			} else {
+				let languageName =
+					Locale.current.localizedString(forLanguageCode: language) ?? "English"
+				prompt = """
+					Generate three concise and relevant follow-up questions in \(languageName).
+					Return only the questions, each on a new line.
+
+					Text:
+					"""
+					+ content
+			}
 			let ctx = ModelContextInfo(
 				isYouTube: false,
 				summaryLength: .medium,
@@ -187,6 +210,7 @@ public class AIService: ObservableObject {
 					let prompt = buildYouTubePrompt(
 						with: text, language: language, summaryStyle: summaryStyle,
 						summaryLength: summaryLength)
+					print(prompt)
 					let ctx = ModelContextInfo(
 						isYouTube: true,
 						summaryLength: summaryLength,
@@ -245,21 +269,41 @@ public class AIService: ObservableObject {
 		let stylePrompt = summaryStyle.promptTemplate
 		let lengthModifier = summaryLength.lengthModifier
 
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
-		return """
-			Instructions:
-			1) Write the summary in \(languageName).
-			2) Follow this style: \(stylePrompt)
-			3) Enforce this length guidance: \(lengthModifier)
+		if language == "auto" {
+			return """
+				Language Policy:
+				- Output MUST be entirely in the predominant natural language of the content to summarize. If unclear or mixed, use \(fallbackLanguageName).
+				- Do not explain or mention language choice. Start directly with the summary.
 
-			Content to summarize:
-			\(text)
+				Content to summarize:
+				\(text)
 
-			Summary:
-			"""
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				"""
+		} else {
+			let languageName =
+				Locale.current.localizedString(forLanguageCode: language)
+				?? "English"
+			return """
+				Language Policy:
+				- Output MUST be entirely in \(languageName).
+				- Do not use any other language or mention language choice.
+
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+
+				Content to summarize:
+				\(text)
+				"""
+		}
 	}
 
 	private func buildYouTubePrompt(
@@ -271,40 +315,66 @@ public class AIService: ObservableObject {
 		let stylePrompt = summaryStyle.promptTemplate
 		let lengthModifier = summaryLength.lengthModifier
 
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
-		return """
-			Instructions:
-			1) Write the summary in \(languageName).
-			2) Follow this style: \(stylePrompt)
-			3) Enforce this length guidance: \(lengthModifier)
-			4) Include timestamps like [HH:MM:SS] for each point.
+		if language == "auto" {
+			return """
+				Language Policy:
+				- Output MUST be entirely in the predominant natural language of the transcript. If unclear or mixed, use \(fallbackLanguageName).
+				- Do not explain or mention language choice.
 
-			Transcript:
-			\(text)
+				Transcript:
+				\(text)
 
-			Summary with timestamps:
-			"""
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				3) Include timestamps like [HH:MM:SS] for each point.
+				"""
+		} else {
+			let languageName =
+				Locale.current.localizedString(forLanguageCode: language)
+				?? "English"
+			return """
+				Language Policy:
+				- Output MUST be entirely in \(languageName).
+				- Do not use any other language or mention language choice.
+
+				Instructions:
+				1) Follow this style: \(stylePrompt)
+				2) Enforce this length guidance: \(lengthModifier)
+				3) Include timestamps like [HH:MM:SS] for each point.
+
+				Transcript:
+				\(text)
+				"""
+		}
 	}
 
 	private func buildYouTubeChatPrompt(
 		message: String, transcript: String, language: String = "en"
 	) -> String {
-		let languageName =
-			Locale.current.localizedString(forLanguageCode: language)
+		let fallbackCode = (language == "auto") ? "en" : language
+		let fallbackLanguageName =
+			Locale.current.localizedString(forLanguageCode: fallbackCode)
 			?? "English"
 
 		return """
+			Language Policy:
+			- Respond strictly in the same language as the user's question.
+			- If you cannot confidently determine the language, respond in \(fallbackLanguageName).
+			- Do not explain or mention language choice. Start directly with the answer.
+
 			You are an expert at analyzing YouTube videos and answering questions about their content.
 
 			Here is the YouTube Transcript:
 			\(transcript)
 
-			User question: \(message)
-
-			Please answer the question in \(languageName) as if you had watched the video, referencing timestamps and video structure where relevant. If the user asks about a specific time, focus your answer on that section. If you don't know the answer, say so.
+			User question:
+			\(message)
 			"""
 	}
 }

@@ -219,7 +219,8 @@ public enum SummaryStyle: String, CaseIterable, Identifiable {
 		case .default:
 			return "Provides a summary that is easy to understand and covers the main points."
 		case .keyPoints:
-			return "Extracts the 5 most important key takeaways as a concise, numbered list."
+			return
+				"Extracts the 5 most important key takeaways as a concise, numbered list. Each point must be a complete and self-contained sentence. Ensure the points are objective and directly supported by the text."
 		case .simpleLanguage:
 			return "Summarizes using simple, clear, and easy-to-understand language."
 		case .actionItems:
@@ -312,6 +313,19 @@ public enum ModelSelectionMode: String, CaseIterable, Identifiable {
 				"Automatically chooses among fast, cost‑efficient models based on your content and summary length."
 		case .manual:
 			return "Select a specific model to use for all requests."
+		}
+	}
+}
+
+public enum LanguageSelectionMode: String, CaseIterable, Identifiable {
+	case auto
+	case manual
+
+	public var id: String { rawValue }
+	public var title: String {
+		switch self {
+		case .auto: return "Auto Detect"
+		case .manual: return "Manual"
 		}
 	}
 }
