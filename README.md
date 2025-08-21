@@ -1,6 +1,6 @@
 <div align="center">
   <img
-    width="80"
+    width="100"
     src="./docs/icon.png"
     alt="QuickSummary"
   >
