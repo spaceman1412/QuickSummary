@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
   @StateObject private var viewModel = SettingsViewModel()
+  @StateObject private var usageTracker = UsageTrackerService.shared
   @Environment(\.openURL) private var openURL
 
   var body: some View {
@@ -269,7 +270,7 @@ struct SettingsView: View {
       HStack {
         Label("Time Saved", systemImage: "clock.fill")
         Spacer()
-        Text(viewModel.usageTracker.formattedMinutesSaved)
+        Text(usageTracker.formattedMinutesSaved)
           .foregroundColor(.green)
           .fontWeight(.medium)
       }
@@ -277,7 +278,7 @@ struct SettingsView: View {
       HStack {
         Label("Summaries Created", systemImage: "doc.text")
         Spacer()
-        Text("\(viewModel.usageTracker.totalSummariesCreated)")
+        Text("\(usageTracker.totalSummariesCreated)")
           .foregroundColor(.blue)
           .fontWeight(.medium)
       }
@@ -285,7 +286,7 @@ struct SettingsView: View {
       HStack {
         Label("API Calls", systemImage: "network")
         Spacer()
-        Text("\(viewModel.usageTracker.totalAPICallsCount)")
+        Text("\(usageTracker.totalAPICallsCount)")
           .foregroundColor(.purple)
           .fontWeight(.medium)
       }

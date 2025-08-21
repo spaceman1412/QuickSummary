@@ -95,7 +95,6 @@ public class SummaryViewModel: ObservableObject {
 			if let scene = UIApplication.shared.connectedScenes
 				.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
 			{
-				print("Prompting review")
 				ReviewRequestService.shared.tryPromptInAppIfEligible(windowScene: scene)
 			}
 		#endif

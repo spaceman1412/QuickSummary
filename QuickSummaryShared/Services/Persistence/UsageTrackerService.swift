@@ -1,10 +1,17 @@
 import Combine
+import CoreFoundation
 import Foundation
 
+@MainActor
 public class UsageTrackerService: ObservableObject {
   public static let shared = UsageTrackerService()
 
   private let userDefaults: UserDefaults
+  private let appGroupID = "group.com.catboss.quicksummary"
+
+  // Darwin notification for cross-process sync
+  private let darwinNotificationName = "group.com.catboss.quicksummary.usageUpdated"
+  private var darwinObserverAdded = false
 
   // Published properties for UI updates
   @Published public var totalMinutesSaved: Double = 0
@@ -21,14 +28,18 @@ public class UsageTrackerService: ObservableObject {
 
   private init() {
     // Use shared container for App Groups when available
-    let appGroupID = "group.com.catboss.quicksummary"
     self.userDefaults = UserDefaults(suiteName: appGroupID) ?? .standard
 
     // Load existing values from UserDefaults
     self.totalMinutesSaved = userDefaults.double(forKey: Keys.totalMinutesSaved)
     self.totalSummariesCreated = userDefaults.integer(forKey: Keys.totalSummariesCreated)
     self.totalAPICallsCount = userDefaults.integer(forKey: Keys.totalAPICallsCount)
+
+    // Observe cross-process updates via Darwin notifications
+    addDarwinObserverIfNeeded()
   }
+
+  // Note: Singleton lives for app lifetime; explicit removal not required
 
   // MARK: - Minutes Saved Tracking
 
@@ -37,6 +48,7 @@ public class UsageTrackerService: ObservableObject {
     userDefaults.set(totalMinutesSaved, forKey: Keys.totalMinutesSaved)
     incrementSummariesCreated()
     updateLastUsedDate()
+    postDarwinNotification()
   }
 
   // MARK: - Summary Statistics
@@ -51,6 +63,7 @@ public class UsageTrackerService: ObservableObject {
   public func incrementAPICallCount() {
     totalAPICallsCount += 1
     userDefaults.set(totalAPICallsCount, forKey: Keys.totalAPICallsCount)
+    postDarwinNotification()
   }
 
   // MARK: - Usage Patterns
@@ -87,5 +100,49 @@ public class UsageTrackerService: ObservableObject {
     let daysSinceFirstUse =
       Calendar.current.dateComponents([.day], from: firstUse, to: Date()).day ?? 1
     return totalMinutesSaved / Double(max(daysSinceFirstUse, 1))
+  }
+
+  // MARK: - Cross-process sync helpers
+
+  public func reloadFromStore() {
+    // Re-read values from the shared UserDefaults and publish
+    let minutes = userDefaults.double(forKey: Keys.totalMinutesSaved)
+    let summaries = userDefaults.integer(forKey: Keys.totalSummariesCreated)
+    let apiCalls = userDefaults.integer(forKey: Keys.totalAPICallsCount)
+
+    // Assign to @Published properties
+    totalMinutesSaved = minutes
+    totalSummariesCreated = summaries
+    totalAPICallsCount = apiCalls
+  }
+
+  private func postDarwinNotification() {
+    let center = CFNotificationCenterGetDarwinNotifyCenter()
+    CFNotificationCenterPostNotification(
+      center, CFNotificationName(darwinNotificationName as CFString), nil, nil, true)
+  }
+
+  private func addDarwinObserverIfNeeded() {
+    guard !darwinObserverAdded else { return }
+    let center = CFNotificationCenterGetDarwinNotifyCenter()
+    let observer = UnsafeRawPointer(Unmanaged.passUnretained(self).toOpaque())
+    CFNotificationCenterAddObserver(
+      center, observer,
+      { (_, observer, name, _, _) in
+        guard let observer = observer else { return }
+        let instance = Unmanaged<UsageTrackerService>.fromOpaque(observer).takeUnretainedValue()
+        Task { @MainActor in
+          instance.reloadFromStore()
+        }
+      }, darwinNotificationName as CFString, nil, .deliverImmediately)
+    darwinObserverAdded = true
+  }
+
+  private func removeDarwinObserverIfNeeded() {
+    guard darwinObserverAdded else { return }
+    let center = CFNotificationCenterGetDarwinNotifyCenter()
+    let observer = UnsafeRawPointer(Unmanaged.passUnretained(self).toOpaque())
+    CFNotificationCenterRemoveEveryObserver(center, observer)
+    darwinObserverAdded = false
   }
 }

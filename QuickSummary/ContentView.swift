@@ -6,6 +6,7 @@ struct ContentView: View {
 	@Environment(\.modelContext) private var modelContext
 	@Environment(\.scenePhase) private var scenePhase
 	@StateObject private var settingsService = SettingsService.shared
+	@StateObject private var usageTracker = UsageTrackerService.shared
 	@State private var showWhatsNew = false
 
 	var body: some View {
@@ -39,9 +40,11 @@ struct ContentView: View {
 				showWhatsNew = true
 			}
 		}
-		.onChange(of: scenePhase) { _, newPhase in
+		.onChange(of: scenePhase) {
 			#if canImport(UIKit)
-				guard newPhase == .active else { return }
+				guard scenePhase == .active else { return }
+				// Reload usage stats from shared store to reflect extension updates
+				UsageTrackerService.shared.reloadFromStore()
 				if let scene = UIApplication.shared.connectedScenes
 					.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
 				{
