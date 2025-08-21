@@ -90,11 +90,12 @@ public class SummaryViewModel: ObservableObject {
 		usageTracker.incrementAPICallCount()
 		isLoadingSummary = false
 
-		// Attempt review prompt (main app uses StoreKit; extension should show CTA)
+		// Attempt review prompt as soon as a summary succeeds (main app only)
 		#if canImport(UIKit) && !APP_EXTENSION
 			if let scene = UIApplication.shared.connectedScenes
 				.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
 			{
+				print("Prompting review")
 				ReviewRequestService.shared.tryPromptInAppIfEligible(windowScene: scene)
 			}
 		#endif

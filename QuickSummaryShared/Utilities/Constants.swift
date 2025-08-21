@@ -47,7 +47,7 @@ public struct AppConstants {
 	// MARK: - Review & App Store
 	public struct Review {
 		/// Minimum successful summaries before first prompt
-		public static let minSummariesForPrompt: Int = 3
+		public static let minSummariesForPrompt: Int = 5
 		/// Cool‑off window (days) between prompts
 		public static let cooldownDays: Int = 7
 		/// Your App Store app ID (update before release)

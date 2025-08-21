@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ContentView: View {
 	@Environment(\.modelContext) private var modelContext
+	@Environment(\.scenePhase) private var scenePhase
 	@StateObject private var settingsService = SettingsService.shared
 	@State private var showWhatsNew = false
 
@@ -37,6 +38,16 @@ struct ContentView: View {
 			{
 				showWhatsNew = true
 			}
+		}
+		.onChange(of: scenePhase) { _, newPhase in
+			#if canImport(UIKit)
+				guard newPhase == .active else { return }
+				if let scene = UIApplication.shared.connectedScenes
+					.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+				{
+					ReviewRequestService.shared.tryPromptInAppIfEligible(windowScene: scene)
+				}
+			#endif
 		}
 		.fullScreenCover(isPresented: $showWhatsNew) {
 			let version = Bundle.main.appVersion ?? "1.1.0"

@@ -42,10 +42,11 @@ public final class ReviewRequestService: ObservableObject {
     #if !os(macOS)
         public func tryPromptInAppIfEligible(windowScene: UIWindowScene?) {
             let totals = UsageTrackerService.shared.totalSummariesCreated
-            guard shouldPrompt(totalSummaries: totals) else { return }
             guard let scene = windowScene else { return }
-            SKStoreReviewController.requestReview(in: scene)
-            markPromptShown()
+            if shouldPrompt(totalSummaries: totals) {
+                SKStoreReviewController.requestReview(in: scene)
+                markPromptShown()
+            }
         }
     #endif
 
