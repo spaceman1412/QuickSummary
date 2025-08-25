@@ -42,7 +42,7 @@ public final class ReviewRequestService: ObservableObject {
         }
 
         let additionalSinceBaseline = max(0, totalSummaries - (baselineSummariesCount ?? 0))
-        guard additionalSinceBaseline >= 5 else { return false }
+        guard additionalSinceBaseline >= 3 else { return false }
 
         if let last = lastPromptedDate {
             let days = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
