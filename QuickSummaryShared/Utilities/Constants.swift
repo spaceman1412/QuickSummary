@@ -113,7 +113,7 @@ public func isValidURL(_ input: String) -> Bool {
 }
 
 public func isPDF(_ input: String) -> Bool {
-	input.lowercased().contains(".pdf") || input.lowercased().contains("pdf")
+	input.lowercased().contains(".pdf")
 }
 
 public enum InputType {
