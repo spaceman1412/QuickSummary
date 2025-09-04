@@ -7,7 +7,6 @@ struct ContentView: View {
 	@Environment(\.scenePhase) private var scenePhase
 	@StateObject private var settingsService = SettingsService.shared
 	@StateObject private var usageTracker = UsageTrackerService.shared
-	@State private var showWhatsNew = false
 
 	var body: some View {
 		TabView {
@@ -32,14 +31,6 @@ struct ContentView: View {
 		) {
 			OnboardingView(hasCompletedOnboarding: $settingsService.hasCompletedOnboarding)
 		}
-		.onAppear {
-			let version = Bundle.main.appVersion ?? "1.1.0"
-			if shouldShowWhatsNew(version: version)
-				&& SettingsService.shared.hasCompletedOnboarding
-			{
-				showWhatsNew = true
-			}
-		}
 		.onChange(of: scenePhase) {
 			#if canImport(UIKit)
 				guard scenePhase == .active else { return }
@@ -51,13 +42,6 @@ struct ContentView: View {
 					ReviewRequestService.shared.tryPromptInAppIfEligible(windowScene: scene)
 				}
 			#endif
-		}
-		.fullScreenCover(isPresented: $showWhatsNew) {
-			let version = Bundle.main.appVersion ?? "1.1.0"
-			WhatsNewView(version: version) {
-				markWhatsNewShown(version: version)
-				showWhatsNew = false
-			}
 		}
 	}
 }
